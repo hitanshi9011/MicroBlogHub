@@ -1,0 +1,270 @@
+/* RESET */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* VARIABLES */
+:root {
+  --bg: #020617;
+  --bg-elevated: #0b1020;
+  --accent: #4f46e5;
+  --accent-soft: rgba(79, 70, 229, 0.15);
+  --text: #e5e7eb;
+  --text-soft: #9ca3af;
+  --border: rgba(148, 163, 184, 0.35);
+  --radius: 16px;
+}
+
+/* BASE */
+html,
+body {
+  height: 100%;
+  font-family: "Inter", system-ui, sans-serif;
+  background: radial-gradient(circle at top, #1e293b, #020617 60%);
+  color: var(--text);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* APP LAYOUT */
+.app-shell {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 18px auto;
+  padding: 18px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #020617, #020617);
+  border: 1px solid var(--border);
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid var(--border);
+}
+
+.brand h1 {
+  font-size: 1.1rem;
+}
+
+.brand p {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.current-user-card {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--border);
+}
+
+.user-meta h2 {
+  font-size: 0.9rem;
+}
+
+.user-meta p {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+/* AVATAR */
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #22c55e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.avatar-lg {
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+}
+
+/* PEOPLE */
+.people-section h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.person-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 6px;
+  border-radius: 12px;
+}
+
+.person-row:hover {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.person-main strong {
+  font-size: 0.8rem;
+}
+
+.follow-chip {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+/* MAIN */
+.main {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  padding: 16px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* COMPOSER */
+.composer-card {
+  display: flex;
+  gap: 0.75rem;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--border);
+}
+
+.composer-main {
+  flex: 1;
+}
+
+.composer-main textarea {
+  width: 100%;
+  resize: none;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.composer-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+/* BUTTONS */
+.primary-btn {
+  background: linear-gradient(135deg, #4f46e5, #22c55e);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  opacity: 0.9;
+}
+
+/* POSTS */
+.posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.post {
+  display: flex;
+  gap: 0.75rem;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--border);
+}
+
+.post-header {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.post-author-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.post-body {
+  margin: 6px 0;
+  font-size: 0.9rem;
+}
+
+.post-footer {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+/* COMMENTS */
+.comments {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.comments p {
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.comments input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+}
+
+.comments button {
+  margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent-soft);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+}

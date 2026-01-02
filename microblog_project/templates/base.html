@@ -1,0 +1,34 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MicroBlogHub{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/vibetext.css' %}">
+</head>
+<body>
+
+    <!-- TOP NAV -->
+    <nav style="padding:10px; background:#111; color:white;">
+        <a href="{% url 'home' %}" style="color:white; margin-right:15px;">Home</a>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'profile' user.username %}" style="color:white; margin-right:15px;">
+                Profile
+            </a>
+            <span>Hi, {{ user.username }}</span>
+            |
+            <a href="{% url 'logout' %}" style="color:white;">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}" style="color:white;">Login</a>
+        {% endif %}
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div style="padding:20px;">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+</body>
+</html>

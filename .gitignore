@@ -1,0 +1,16 @@
+# Virtual environment
+venv/
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Environment variables (MySQL credentials)
+.env
+
+# OS files
+.DS_Store
+
+# Editor settings
+.vscode/
+.idea/

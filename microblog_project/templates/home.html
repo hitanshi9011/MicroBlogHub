@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Home | MicroBlogHub{% endblock %}
+
+{% block content %}
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="brand">
+      <div class="brand-text">
+        <h1>vibetext E3</h1>
+        <p>Express • Engage • Echo</p>
+      </div>
+    </div>
+
+    <section class="current-user-card">
+      <div class="avatar avatar-lg">
+        {{ request.user.username|first|upper }}
+      </div>
+      <div class="user-meta">
+        <h2>@{{ request.user.username }}</h2>
+        <p>Logged in user</p>
+      </div>
+
+      <!-- ✅ PROFILE LINK (CORRECT) -->
+      <a href="{% url 'profile' request.user.username %}">
+        View Profile
+      </a>
+    </section>
+
+    <section class="people-section">
+      <h3>People</h3>
+
+      {% for u in users %}
+      <div class="person-row">
+        <div class="avatar">{{ u.username|first|upper }}</div>
+        <div class="person-main">
+          <strong>{{ u.username }}</strong>
+        </div>
+
+        {% if u.id in following_ids %}
+          <a href="{% url 'unfollow' u.id %}" class="follow-chip">Unfollow</a>
+        {% else %}
+          <a href="{% url 'follow' u.id %}" class="follow-chip">Follow</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </section>
+
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- COMPOSER -->
+    <section class="composer-card">
+      <div class="avatar">{{ request.user.username|first|upper }}</div>
+
+      <form method="POST" action="{% url 'create_post' %}" class="composer-main">
+        {% csrf_token %}
+        <textarea name="content" maxlength="280" rows="2"
+          placeholder="What's happening?" required></textarea>
+
+        <div class="composer-footer">
+          <span id="charCount">0 / 280</span>
+          <button type="submit" class="primary-btn">Post</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- POSTS -->
+    <section class="posts-list">
+      {% for post in posts %}
+      <article class="post">
+
+        <div class="avatar">
+          {{ post.user.username|first|upper }}
+        </div>
+
+        <div class="post-main">
+
+          <header class="post-header">
+            <div>
+              <!-- ✅ PROFILE LINK PER POST -->
+              <a href="{% url 'profile' post.user.username %}">
+                <span class="post-author-name">{{ post.user.username }}</span>
+              </a>
+              <span class="post-dot">·</span>
+              <span class="post-time">{{ post.created_at|timesince }} ago</span>
+            </div>
+          </header>
+
+          <p class="post-body">{{ post.content }}</p>
+
+          <footer class="post-footer">
+            ❤️ {{ post.like_set.count }}
+
+            {% if post.id in liked_posts %}
+              <a href="{% url 'unlike' post.id %}">Unlike</a>
+            {% else %}
+              <a href="{% url 'like' post.id %}">Like</a>
+            {% endif %}
+          </footer>
+
+          <!-- COMMENTS -->
+          <section class="comments">
+            {% for comment in post.comment_set.all %}
+              <p><b>{{ comment.user.username }}</b>: {{ comment.text }}</p>
+            {% empty %}
+              <p>No comments yet</p>
+            {% endfor %}
+
+            <form method="POST" action="{% url 'add_comment' post.id %}">
+              {% csrf_token %}
+              <input type="text" name="comment" placeholder="Write a comment" required>
+              <button type="submit">Reply</button>
+            </form>
+          </section>
+
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+
+  </main>
+</div>
+
+{% endblock %}
