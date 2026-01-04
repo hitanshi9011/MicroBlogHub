@@ -37,13 +37,13 @@ icroBlogHub/
 │── requirements.txt
 │── README.md
 
-#👥 Team Members
+# 👥 Team Members
 
-*Hitanshi Mopari
+* Hitanshi Mopari
 
-*Ritika Mohite
+* Ritika Mohite
 
-*Trupti Naikwadi
+* Trupti Naikwadi
 
 
 #📄 License
