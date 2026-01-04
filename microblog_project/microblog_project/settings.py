@@ -80,9 +80,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'microblog_db',
-        'USER': 'root',
-        'PASSWORD': 'microblogg56@',
-        'HOST': 'localhost',
+        'USER': 'shared_user',
+        'PASSWORD': 'Shared@12345',
+        'HOST': '172.16.81.120',
         'PORT': '3306',
     }
 }

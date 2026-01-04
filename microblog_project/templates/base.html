@@ -3,29 +3,194 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MicroBlogHub{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/vibetext.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="{% static 'js/vibetext.js' %}" defer></script>
+    <style>
+        /* Enhanced Navigation */
+        .top-nav {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+
+        .nav-brand:hover {
+            transform: scale(1.05);
+            text-decoration: none;
+        }
+
+        .nav-brand::before {
+            content: "✨";
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-soft);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: var(--text);
+            background: rgba(79, 70, 229, 0.1);
+            text-decoration: none;
+        }
+
+        .nav-link.active {
+            color: var(--accent);
+            background: var(--accent-soft);
+        }
+
+        .user-greeting {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-soft);
+            font-size: 0.9rem;
+        }
+
+        .user-avatar-nav {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5, #22c55e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .btn-logout {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+            text-decoration: none;
+        }
+
+        .btn-primary-nav {
+            background: linear-gradient(135deg, #4f46e5, #22c55e);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-nav:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+            text-decoration: none;
+        }
+
+        /* Main Content Wrapper */
+        .main-content-wrapper {
+            min-height: calc(100vh - 80px);
+            padding: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .top-nav {
+                padding: 1rem;
+            }
+
+            .nav-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .main-content-wrapper {
+                padding: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
 
     <!-- TOP NAV -->
-    <nav style="padding:10px; background:#111; color:white;">
-        <a href="{% url 'home' %}" style="color:white; margin-right:15px;">Home</a>
-
-        {% if user.is_authenticated %}
-            <a href="{% url 'profile' user.username %}" style="color:white; margin-right:15px;">
-                Profile
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="{% url 'home' %}" class="nav-brand">
+                MicroBlogHub
             </a>
-            <span>Hi, {{ user.username }}</span>
-            |
-            <a href="{% url 'logout' %}" style="color:white;">Logout</a>
-        {% else %}
-            <a href="{% url 'login' %}" style="color:white;">Login</a>
-        {% endif %}
+
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a>
+                    <a href="{% url 'profile' user.username %}" class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                        Profile
+                    </a>
+                    <div class="user-greeting">
+                        <div class="user-avatar-nav">{{ user.username|first|upper }}</div>
+                        <span>Hi, <strong>{{ user.username }}</strong></span>
+                    </div>
+                    <a href="{% url 'logout' %}" class="btn-logout">Logout</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}">Login</a>
+                    <a href="{% url 'register' %}" class="btn-primary-nav">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
     </nav>
 
     <!-- MAIN CONTENT -->
-    <div style="padding:20px;">
+    <div class="main-content-wrapper">
         {% block content %}
         {% endblock %}
     </div>

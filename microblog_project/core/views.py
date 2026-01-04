@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from .models import Post, Follow
 
+
 def home(request):
     if request.user.is_authenticated:
         # Users that the current user follows

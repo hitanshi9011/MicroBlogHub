@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Home | MicroBlogHub{% endblock %}
 
 {% block content %}
+
+<script src="{% static 'js/vibetext.js' %}"></script>
 
 <div class="app-shell">
 
@@ -15,6 +18,8 @@
         <p>Express • Engage • Echo</p>
       </div>
     </div>
+
+    
 
     <section class="current-user-card">
       <div class="avatar avatar-lg">
@@ -96,27 +101,73 @@
           <p class="post-body">{{ post.content }}</p>
 
           <footer class="post-footer">
-            ❤️ {{ post.like_set.count }}
-
-            {% if post.id in liked_posts %}
-              <a href="{% url 'unlike' post.id %}">Unlike</a>
-            {% else %}
-              <a href="{% url 'like' post.id %}">Like</a>
-            {% endif %}
+            <div class="post-actions">
+              <div class="like-section">
+                {% if post.id in liked_posts %}
+                  <a href="{% url 'unlike' post.id %}" class="action-btn liked">
+                    <span class="action-icon">❤️</span>
+                    <span class="action-count">{{ post.like_set.count }}</span>
+                  </a>
+                {% else %}
+                  <a href="{% url 'like' post.id %}" class="action-btn">
+                    <span class="action-icon">🤍</span>
+                    <span class="action-count">{{ post.like_set.count }}</span>
+                  </a>
+                {% endif %}
+              </div>
+              <div class="comment-toggle">
+                <button type="button" class="action-btn comment-btn" onclick="toggleComments(this)" aria-label="Toggle comments">
+                  <span class="action-icon">💬</span>
+                  <span class="action-count">{{ post.comment_set.count }}</span>
+                  {% if post.comment_set.count > 0 %}
+                    <span class="comment-badge">{{ post.comment_set.count }}</span>
+                  {% endif %}
+                </button>
+              </div>
+            </div>
           </footer>
 
           <!-- COMMENTS -->
-          <section class="comments">
-            {% for comment in post.comment_set.all %}
-              <p><b>{{ comment.user.username }}</b>: {{ comment.text }}</p>
-            {% empty %}
-              <p>No comments yet</p>
-            {% endfor %}
-
-            <form method="POST" action="{% url 'add_comment' post.id %}">
+          <section class="comments" style="display: none;" aria-label="Comments section">
+            <div class="comments-header">
+              <h4>
+                <span class="comments-icon">💬</span>
+                Comments
+                {% if post.comment_set.count > 0 %}
+                  <span class="comments-count">({{ post.comment_set.count }})</span>
+                {% endif %}
+              </h4>
+            </div>
+            <div class="comments-list">
+              {% for comment in post.comment_set.all %}
+                <div class="comment-item">
+                  <div class="comment-avatar">{{ comment.user.username|first|upper }}</div>
+                  <div class="comment-content">
+                    <div class="comment-author">
+                      <a href="{% url 'profile' comment.user.username %}">
+                        <strong>{{ comment.user.username }}</strong>
+                      </a>
+                      <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+                    </div>
+                    <div class="comment-text">{{ comment.text }}</div>
+                  </div>
+                </div>
+              {% empty %}
+                <p class="no-comments">
+                  <span class="no-comments-icon">💭</span>
+                  No comments yet. Be the first to comment!
+                </p>
+              {% endfor %}
+            </div>
+            <form method="POST" action="{% url 'add_comment' post.id %}" class="comment-form">
               {% csrf_token %}
-              <input type="text" name="comment" placeholder="Write a comment" required>
-              <button type="submit">Reply</button>
+              <div class="comment-input-wrapper">
+                <input type="text" name="comment" placeholder="Write a comment..." required aria-label="Comment input">
+                <button type="submit" class="comment-submit-btn" aria-label="Submit comment">
+                  <span>Post</span>
+                  <span class="submit-icon">→</span>
+                </button>
+              </div>
             </form>
           </section>
 
