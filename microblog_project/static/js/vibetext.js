@@ -126,63 +126,12 @@
     }
 
     // ============================================
-    // Character Counter Module
+    // Character Counter Module (Disabled - No Limit)
     // ============================================
     const CharacterCounter = {
         init() {
-            const textarea = document.querySelector('.composer-main textarea');
-            const charCount = document.getElementById('charCount');
-            
-            if (!textarea || !charCount) return;
-
-            // Initial count
-            this.updateCounter(textarea, charCount);
-
-            // Add input event listener with debounce
-            const updateCounter = debounce(() => {
-                this.updateCounter(textarea, charCount);
-            }, CONFIG.DEBOUNCE_DELAY);
-
-            textarea.addEventListener('input', updateCounter);
-            textarea.addEventListener('paste', () => {
-                setTimeout(updateCounter, 10);
-            });
-
-            // Prevent exceeding max length
-            textarea.addEventListener('input', (e) => {
-                if (e.target.value.length > CONFIG.MAX_POST_LENGTH) {
-                    e.target.value = e.target.value.substring(0, CONFIG.MAX_POST_LENGTH);
-                    this.updateCounter(textarea, charCount);
-                    showToast('Character limit reached!', 'warning');
-                }
-            });
-        },
-
-        updateCounter(textarea, counter) {
-            const length = textarea.value.length;
-            const remaining = CONFIG.MAX_POST_LENGTH - length;
-            
-            counter.textContent = `${length} / ${CONFIG.MAX_POST_LENGTH}`;
-            
-            // Update color based on remaining characters
-            if (length > CONFIG.WARNING_THRESHOLD) {
-                counter.style.color = '#ef4444';
-                counter.style.fontWeight = '600';
-            } else if (length > CONFIG.CAUTION_THRESHOLD) {
-                counter.style.color = '#f59e0b';
-                counter.style.fontWeight = '500';
-            } else {
-                counter.style.color = 'var(--text-soft)';
-                counter.style.fontWeight = '400';
-            }
-
-            // Add visual feedback when near limit
-            if (remaining < 30) {
-                counter.style.animation = 'pulse 1s ease-in-out';
-                setTimeout(() => {
-                    counter.style.animation = '';
-                }, 1000);
-            }
+            // Character counter disabled - no limit on posts
+            // This module is kept for potential future use
         }
     };
 
@@ -191,8 +140,9 @@
     // ============================================
     const CommentsModule = {
         init() {
-            // Make toggleComments available globally
+            // Make toggleComments available globally (for old structure compatibility)
             window.toggleComments = this.toggleComments.bind(this);
+            window.toggleCommentsList = this.toggleCommentsList.bind(this);
             
             const commentButtons = document.querySelectorAll('.comment-btn');
             
@@ -204,37 +154,36 @@
                 });
             });
 
-            // Auto-expand comments on form focus
+            // Initialize comments list toggles
+            const commentsViewToggles = document.querySelectorAll('.comments-view-toggle');
+            commentsViewToggles.forEach(toggle => {
+                toggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.toggleCommentsList(toggle);
+                });
+            });
+
+            // Auto-expand comments list when form is submitted successfully
             const commentForms = document.querySelectorAll('.comment-form');
             commentForms.forEach(form => {
-                const input = form.querySelector('input');
-                if (input) {
-                    input.addEventListener('focus', () => {
-                        const commentsSection = form.closest('.comments');
-                        if (commentsSection && (commentsSection.style.display === 'none' || window.getComputedStyle(commentsSection).display === 'none')) {
-                            const post = form.closest('.post');
-                            const toggleBtn = post?.querySelector('.comment-btn');
-                            if (toggleBtn) {
-                                this.toggleComments(toggleBtn);
-                            }
+                form.addEventListener('submit', () => {
+                    // After form submission, show the comments list
+                    const post = form.closest('.post');
+                    if (post) {
+                        const commentsList = post.querySelector('.comments-list-container');
+                        const toggleBtn = post.querySelector('.comments-view-toggle');
+                        if (commentsList && toggleBtn && (commentsList.style.display === 'none' || window.getComputedStyle(commentsList).display === 'none')) {
+                            setTimeout(() => {
+                                this.toggleCommentsList(toggleBtn);
+                            }, 500); // Wait for page reload/redirect
                         }
-    });
-  }
-});
-
-            // Auto-expand comments if they have content and user wants to see them
-            const postsWithComments = document.querySelectorAll('.post');
-            postsWithComments.forEach(post => {
-                const commentsSection = post.querySelector('.comments');
-                const commentCount = post.querySelector('.comment-btn .action-count');
-                if (commentsSection && commentCount && parseInt(commentCount.textContent) > 0) {
-                    // Keep hidden by default, but make it easier to access
-                    commentsSection.setAttribute('data-has-comments', 'true');
-                }
+                    }
+                });
             });
         },
 
         toggleComments(button) {
+            // Legacy function for old comment structure
             const post = button.closest('.post');
             if (!post) return;
 
@@ -260,8 +209,173 @@
 
             // Update button state
             button.classList.toggle('active');
+        },
+
+        toggleCommentsList(button) {
+            const postId = button.dataset.postId;
+            const commentsList = document.getElementById(`comments-${postId}`);
+            if (!commentsList) return;
+
+            const isHidden = commentsList.style.display === 'none' || 
+                            window.getComputedStyle(commentsList).display === 'none';
+
+            const arrow = button.querySelector('.toggle-arrow');
+
+            if (isHidden) {
+                commentsList.style.display = 'block';
+                fadeIn(commentsList, CONFIG.ANIMATION_DURATION);
+                if (arrow) arrow.textContent = '▲';
+                button.classList.add('active');
+            } else {
+                fadeOut(commentsList, CONFIG.ANIMATION_DURATION);
+                if (arrow) arrow.textContent = '▼';
+                button.classList.remove('active');
+            }
         }
     };
+
+    // Make functions globally available
+    window.toggleAllComments = function(button) {
+        const postId = button.dataset.postId;
+        const commentsList = document.getElementById(`comments-${postId}`);
+        if (!commentsList) return;
+
+        const hiddenComments = commentsList.querySelectorAll('.comment-hidden');
+        const showMoreBtn = document.getElementById(`show-more-${postId}`);
+        const arrow = button.querySelector('.toggle-arrow');
+
+        if (hiddenComments.length > 0) {
+            // Show all hidden comments
+            hiddenComments.forEach(comment => {
+                comment.style.display = 'flex';
+                comment.classList.remove('comment-hidden');
+                fadeIn(comment, 200);
+            });
+
+            // Hide "show more" button
+            if (showMoreBtn) {
+                showMoreBtn.style.display = 'none';
+            }
+
+            // Update toggle button
+            button.querySelector('.toggle-text').textContent = 'Show Less';
+            if (arrow) arrow.textContent = '▲';
+            button.classList.add('active');
+        } else {
+            // Hide comments beyond first 3
+            const allComments = commentsList.querySelectorAll('.comment-item');
+            allComments.forEach((comment, index) => {
+                if (index >= 3) {
+                    comment.style.display = 'none';
+                    comment.classList.add('comment-hidden');
+                }
+            });
+
+            // Show "show more" button
+            if (showMoreBtn) {
+                showMoreBtn.style.display = 'block';
+            }
+
+            // Update toggle button
+            button.querySelector('.toggle-text').textContent = 'Show All';
+            if (arrow) arrow.textContent = '▼';
+            button.classList.remove('active');
+
+            // Scroll to top of comments
+            smoothScrollTo(commentsList, 100);
+        }
+    };
+
+    window.showMoreComments = function(postId) {
+        const commentsList = document.getElementById(`comments-${postId}`);
+        if (!commentsList) return;
+
+        const hiddenComments = commentsList.querySelectorAll('.comment-hidden');
+        const showMoreBtn = document.getElementById(`show-more-${postId}`);
+
+        if (hiddenComments.length > 0) {
+            // Show next 3 comments (or remaining)
+            const toShow = Math.min(3, hiddenComments.length);
+            for (let i = 0; i < toShow; i++) {
+                hiddenComments[i].style.display = 'flex';
+                hiddenComments[i].classList.remove('comment-hidden');
+                fadeIn(hiddenComments[i], 200);
+            }
+
+            // Update button text or hide if all shown
+            const remaining = hiddenComments.length - toShow;
+            if (remaining <= 0 && showMoreBtn) {
+                showMoreBtn.style.display = 'none';
+            } else if (showMoreBtn) {
+                const btn = showMoreBtn.querySelector('.show-more-comments-btn');
+                if (btn) {
+                    const textSpan = btn.querySelector('.show-more-text');
+                    if (textSpan) {
+                        textSpan.textContent = 
+                            `Show ${remaining} more comment${remaining !== 1 ? 's' : ''}`;
+                    }
+                }
+            }
+        }
+    };
+
+    // Initialize show more buttons
+    function initShowMoreButtons() {
+        const showMoreButtons = document.querySelectorAll('.show-more-comments-btn');
+        showMoreButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                if (postId) {
+                    showMoreComments(parseInt(postId, 10));
+                }
+            });
+        });
+    }
+
+    // Like/Unlike Button Enhancements
+    function initLikeButtons() {
+        const likeButtons = document.querySelectorAll('.like-btn, .liked-btn');
+        
+        likeButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                // Add visual feedback
+                const icon = this.querySelector('.action-icon');
+                if (icon) {
+                    icon.style.animation = 'none';
+                    setTimeout(() => {
+                        icon.style.animation = 'heartBeat 0.6s ease';
+                    }, 10);
+                }
+                
+                // Add ripple effect
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const x = e.clientX - rect.left - size / 2;
+                const y = e.clientY - rect.top - size / 2;
+                
+                ripple.style.cssText = `
+                    position: absolute;
+                    width: ${size}px;
+                    height: ${size}px;
+                    border-radius: 50%;
+                    background: rgba(239, 68, 68, 0.3);
+                    left: ${x}px;
+                    top: ${y}px;
+                    pointer-events: none;
+                    animation: ripple 0.6s ease-out;
+                `;
+                
+                if (getComputedStyle(this).position === 'static') {
+                    this.style.position = 'relative';
+                }
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+    }
 
     // ============================================
     // Form Enhancements Module
@@ -516,6 +630,8 @@
             FormEnhancements.init();
             InteractiveElements.init();
             NavigationModule.init();
+            initShowMoreButtons();
+            initLikeButtons();
 
             console.log('✨ MicroBlogHub enhanced JavaScript loaded successfully!');
         } catch (error) {
@@ -531,10 +647,32 @@
         smoothScrollTo,
         CharacterCounter,
         CommentsModule,
-        FormEnhancements
+        FormEnhancements,
+        toggleProfileComments
     };
+    function toggleProfileComments(postId) {
+        const el = document.getElementById(`profile-comments-${postId}`);
+        if (!el) return;
+    
+        if (el.style.display === 'none' || el.style.display === '') {
+            el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+        }
+    }
+    
+    
 
     // Start the application
     init();
 
 })();
+
+// Comment Delete Confirmation
+function confirmDeleteComment(event) {
+    if (!confirm('Are you sure you want to delete this comment? This action cannot be undone.')) {
+        event.preventDefault();
+        return false;
+    }
+    return true;
+}

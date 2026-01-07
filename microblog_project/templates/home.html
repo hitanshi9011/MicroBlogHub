@@ -7,6 +7,20 @@
 
 <script src="{% static 'js/vibetext.js' %}"></script>
 
+<!-- Messages Display -->
+{% if messages %}
+  <div class="messages-container">
+    {% for message in messages %}
+      <div class="message-alert {% if message.tags %}{{ message.tags }}{% endif %}">
+        <span class="message-icon">
+          {% if message.tags == 'success' %}✓{% elif message.tags == 'error' %}✕{% else %}ℹ{% endif %}
+        </span>
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
 <div class="app-shell">
 
   <!-- SIDEBAR -->
@@ -38,22 +52,38 @@
 
     <section class="people-section">
       <h3>People</h3>
-
+    
       {% for u in users %}
       <div class="person-row">
-        <div class="avatar">{{ u.username|first|upper }}</div>
+    
+        <!-- Avatar → Profile -->
+        <a href="{% url 'profile' u.username %}" class="avatar-link">
+          <div class="avatar">{{ u.username|first|upper }}</div>
+        </a>
+    
+        <!-- Username → Profile -->
         <div class="person-main">
-          <strong>{{ u.username }}</strong>
+          <a href="{% url 'profile' u.username %}" class="person-name-link">
+            <strong>{{ u.username }}</strong>
+          </a>
         </div>
-
-        {% if u.id in following_ids %}
-          <a href="{% url 'unfollow' u.id %}" class="follow-chip">Unfollow</a>
-        {% else %}
-          <a href="{% url 'follow' u.id %}" class="follow-chip">Follow</a>
-        {% endif %}
+    
+        <!-- Actions -->
+        <div class="person-actions">
+          <a href="{% url 'conversation' u.username %}" class="message-chip" title="Message {{ u.username }}">
+            <span>💬</span>
+          </a>
+          {% if u.id in following_ids %}
+            <a href="{% url 'unfollow' u.id %}" class="follow-chip">Unfollow</a>
+          {% else %}
+            <a href="{% url 'follow' u.id %}" class="follow-chip">Follow</a>
+          {% endif %}
+        </div>
+    
       </div>
       {% endfor %}
     </section>
+    
 
   </aside>
 
@@ -66,11 +96,10 @@
 
       <form method="POST" action="{% url 'create_post' %}" class="composer-main">
         {% csrf_token %}
-        <textarea name="content" maxlength="280" rows="2"
+        <textarea name="content" rows="3"
           placeholder="What's happening?" required></textarea>
 
         <div class="composer-footer">
-          <span id="charCount">0 / 280</span>
           <button type="submit" class="primary-btn">Post</button>
         </div>
       </form>
@@ -81,17 +110,20 @@
       {% for post in posts %}
       <article class="post">
 
-        <div class="avatar">
-          {{ post.user.username|first|upper }}
-        </div>
+        <!-- Clickable Avatar to Profile -->
+        <a href="{% url 'profile' post.user.username %}" class="post-avatar-link" title="View {{ post.user.username }}'s profile">
+          <div class="avatar post-avatar">
+            {{ post.user.username|first|upper }}
+          </div>
+        </a>
 
         <div class="post-main">
 
           <header class="post-header">
             <div>
-              <!-- ✅ PROFILE LINK PER POST -->
-              <a href="{% url 'profile' post.user.username %}">
-                <span class="post-author-name">{{ post.user.username }}</span>
+              <!-- Clickable Username to Profile -->
+              <a href="{% url 'profile' post.user.username %}" class="post-author-link" title="View {{ post.user.username }}'s profile">
+                <span class="post-author-name">@{{ post.user.username }}</span>
               </a>
               <span class="post-dot">·</span>
               <span class="post-time">{{ post.created_at|timesince }} ago</span>
@@ -100,75 +132,99 @@
 
           <p class="post-body">{{ post.content }}</p>
 
-          <footer class="post-footer">
-            <div class="post-actions">
-              <div class="like-section">
-                {% if post.id in liked_posts %}
-                  <a href="{% url 'unlike' post.id %}" class="action-btn liked">
-                    <span class="action-icon">❤️</span>
-                    <span class="action-count">{{ post.like_set.count }}</span>
-                  </a>
-                {% else %}
-                  <a href="{% url 'like' post.id %}" class="action-btn">
-                    <span class="action-icon">🤍</span>
-                    <span class="action-count">{{ post.like_set.count }}</span>
-                  </a>
-                {% endif %}
+          <div class="like-section">
+            {% if user.is_authenticated %}
+              {% if post.id in liked_posts %}
+                <a
+                  href="{% url 'unlike' post.id %}"
+                  class="action-btn liked-btn"
+                  data-post-id="{{ post.id }}"
+                  data-action="unlike"
+                  aria-pressed="true"
+                  title="Unlike"
+                >
+                  <span class="action-icon liked-icon">❤️</span>
+                  <span class="action-count">{{ post.like_set.count }}</span>
+                </a>
+              {% else %}
+                <a
+                  href="{% url 'like' post.id %}"
+                  class="action-btn like-btn"
+                  data-post-id="{{ post.id }}"
+                  data-action="like"
+                  aria-pressed="false"
+                  title="Like"
+                >
+                  <span class="action-icon">🤍</span>
+                  <span class="action-count">{{ post.like_set.count }}</span>
+                </a>
+              {% endif %}
+            {% else %}
+              <div
+                class="action-btn like-btn-disabled"
+                title="Login to like"
+                aria-disabled="true"
+              >
+                <span class="action-icon">🤍</span>
+                <span class="action-count">{{ post.like_set.count }}</span>
               </div>
-              <div class="comment-toggle">
-                <button type="button" class="action-btn comment-btn" onclick="toggleComments(this)" aria-label="Toggle comments">
-                  <span class="action-icon">💬</span>
-                  <span class="action-count">{{ post.comment_set.count }}</span>
-                  {% if post.comment_set.count > 0 %}
-                    <span class="comment-badge">{{ post.comment_set.count }}</span>
-                  {% endif %}
-                </button>
-              </div>
-            </div>
-          </footer>
+            {% endif %}
+          </div>
 
-          <!-- COMMENTS -->
-          <section class="comments" style="display: none;" aria-label="Comments section">
-            <div class="comments-header">
-              <h4>
-                <span class="comments-icon">💬</span>
-                Comments
-                {% if post.comment_set.count > 0 %}
-                  <span class="comments-count">({{ post.comment_set.count }})</span>
-                {% endif %}
-              </h4>
-            </div>
-            <div class="comments-list">
-              {% for comment in post.comment_set.all %}
-                <div class="comment-item">
-                  <div class="comment-avatar">{{ comment.user.username|first|upper }}</div>
-                  <div class="comment-content">
-                    <div class="comment-author">
-                      <a href="{% url 'profile' comment.user.username %}">
-                        <strong>{{ comment.user.username }}</strong>
-                      </a>
-                      <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
-                    </div>
-                    <div class="comment-text">{{ comment.text }}</div>
-                  </div>
+          <form method="POST" action="{% url 'create_post' %}">
+            {% csrf_token %}
+            <textarea name="content" rows="3" placeholder="What's happening?" required></textarea>
+            <button type="submit" class="primary-btn">Post</button>
+          </form>
+          
+          
+
+          <!-- COMMENTS SECTION - Simple and Clean -->
+          <section class="comments-section" aria-label="Comments section">
+            <!-- Comments List - All visible by default -->
+            {% if post.comment_set.count > 0 %}
+              <div class="comments-list-container" id="comments-{{ post.id }}">
+                <div class="comments-header-simple">
+                  <span class="comments-count-badge">{{ post.comment_set.count }}</span>
+                  <span class="comments-label">Comment{{ post.comment_set.count|pluralize }}</span>
                 </div>
-              {% empty %}
-                <p class="no-comments">
-                  <span class="no-comments-icon">💭</span>
-                  No comments yet. Be the first to comment!
-                </p>
-              {% endfor %}
-            </div>
-            <form method="POST" action="{% url 'add_comment' post.id %}" class="comment-form">
-              {% csrf_token %}
-              <div class="comment-input-wrapper">
-                <input type="text" name="comment" placeholder="Write a comment..." required aria-label="Comment input">
-                <button type="submit" class="comment-submit-btn" aria-label="Submit comment">
-                  <span>Post</span>
-                  <span class="submit-icon">→</span>
-                </button>
+                <div class="comments-list">
+                  {% for comment in post.comment_set.all %}
+                    <div class="comment-item" data-comment-id="{{ comment.id }}">
+                      <div class="comment-avatar">{{ comment.user.username|first|upper }}</div>
+                      <div class="comment-content">
+                        <div class="comment-author">
+                          <a href="{% url 'profile' comment.user.username %}" class="comment-author-link">
+                            <strong>{{ comment.user.username }}</strong>
+                          </a>
+                          <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+                        </div>
+                        <div class="comment-text">{{ comment.text }}</div>
+                      </div>
+                      {% if user.is_authenticated and user == comment.user %}
+                        <a href="{% url 'delete_comment' comment.id %}" class="comment-delete-btn" onclick="return confirmDeleteComment(event)" title="Delete comment">
+                          <span class="delete-icon">🗑️</span>
+                        </a>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
               </div>
-            </form>
+            {% endif %}
+
+            <!-- Comment Form - Always Visible -->
+            <div class="comment-form-container">
+              <form method="POST" action="{% url 'add_comment' post.id %}" class="comment-form">
+                {% csrf_token %}
+                <div class="comment-input-wrapper">
+                  <div class="comment-input-avatar">{{ request.user.username|first|upper }}</div>
+                  <input type="text" name="comment" placeholder="Write a comment..." required aria-label="Comment input" class="comment-input">
+                  <button type="submit" class="comment-submit-btn" aria-label="Submit comment">
+                    <span>▶ Send</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </section>
 
         </div>
