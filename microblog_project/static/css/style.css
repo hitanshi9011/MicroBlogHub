@@ -112,13 +112,44 @@ button:active {
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     padding: 1.5rem 0;
     transition: all 0.3s ease;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    border-radius: 12px;
+    padding: 1rem;
 }
 
 .post:hover {
-    background: rgba(15, 23, 42, 0.3);
-    padding-left: 1rem;
-    padding-right: 1rem;
-    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.42);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+
+/* Trending styles */
+.trending-section { margin-top: 1.5rem; }
+.hashtag-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
+.hashtag-chip {
+    background: rgba(79,70,229,0.08);
+    color: #e6e6ff;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.hashtag-chip:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(79,70,229,0.08); }
+
+.trending-posts .tpost-row { display:flex; gap:0.6rem; align-items:flex-start; padding:0.5rem 0; }
+.trending-posts .tpost-snippet { color:#cbd5e1; font-size:0.95rem; margin:0; }
+
+/* Highlighted search matches */
+.mark-highlight { background: rgba(99,102,241,0.25); padding: 0.05rem 0.2rem; border-radius:4px; }
+
+/* Search input styles for base nav (fallback in style.css in case vibetext overrides) */
+.nav-search-form { display:flex; align-items:center; gap:0.4rem; }
+.nav-search-input { width:200px; padding:0.4rem 0.6rem; border-radius:999px; border:1px solid rgba(148,163,184,0.08); background: rgba(0,0,0,0.2); color:#e5e7eb; }
+.nav-search-btn { background:transparent; border:none; color:#cbd5e1; cursor:pointer; }
+
+@media (max-width: 768px) {
+    .nav-search-input { width: 120px; }
+    .hashtag-list { gap:0.4rem; }
 }
 
 /* Links */
@@ -167,3 +198,54 @@ a:hover {
         padding: 1.5rem;
     }
 }
+
+/* Search results layout */
+.search-main-grid { display:grid; grid-template-columns: 1fr 320px; gap: 2rem; align-items: start; }
+.search-results-main { max-width: 800px; }
+.search-sidebar { background: rgba(11,16,32,0.6); padding: 1rem; border-radius: 12px; border: 1px solid rgba(148,163,184,0.04); }
+
+/* Global box-sizing for predictable layout */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Home layout: left sidebar + main + right sidebar */
+.app-shell { display: grid; grid-template-columns: minmax(220px,260px) minmax(0,1fr) minmax(260px,320px); grid-template-areas: "sidebar main trending"; gap: 2rem; align-items: start; }
+/* More specific rule to override other theme files that may set .app-shell differently */
+.main-content-wrapper .app-shell { display: grid; grid-template-columns: minmax(220px,260px) minmax(0,1fr) minmax(260px,320px); grid-template-areas: "sidebar main trending"; gap: 2rem; align-items: start; }
+.sidebar, .right-sidebar { background: rgba(11,16,32,0.6); padding: 1rem; border-radius: 12px; border: 1px solid rgba(148,163,184,0.04); position: sticky; top: 88px; align-self: start; }
+.main { width: 100%; max-width: 840px; min-width: 0; }
+
+/* Prevent long words from causing horizontal overflow */
+.post-body, .tpost-snippet { overflow-wrap: anywhere; word-break: break-word; }
+
+@media (max-width: 1000px) {
+    .app-shell { grid-template-columns: 1fr; }
+    .sidebar { position: static; order: 1; }
+    .main { order: 2; }
+    .right-sidebar { position: static; order: 3; margin-top: 1rem; }
+    .search-sidebar { order: 2; }
+    .search-results-main { order: 1; }
+}
+
+/* Strong override to force 3-column layout and ensure correct grid-areas */
+.main-content-wrapper .app-shell {
+    display: grid !important;
+    grid-template-columns: 260px minmax(0,1fr) 320px !important;
+    grid-template-areas: "sidebar main trending" !important;
+    gap: 2rem !important;
+}
+.main-content-wrapper .app-shell > .sidebar { grid-area: sidebar !important; }
+.main-content-wrapper .app-shell > .main { grid-area: main !important; }
+.main-content-wrapper .app-shell > .right-sidebar { grid-area: trending !important; }
+
+/* Subtle outline used only for visual verification - remove later */
+.sidebar, .main, .right-sidebar { outline: 1px solid rgba(79,70,229,0.04); }
+
+/* Modal styles (delete confirmation) */
+.modal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1200; }
+.modal-overlay { position: absolute; inset: 0; background: rgba(2,6,23,0.6); }
+.modal-content { position: relative; background: rgba(11,16,32,0.98); border: 1px solid rgba(148,163,184,0.06); padding: 1.25rem; border-radius: 12px; width: 420px; max-width: calc(100% - 2rem); z-index: 2; }
+#deleteModal h3 { margin: 0 0 0.5rem 0; }
+#deleteModalText { color: var(--text-soft); }
+#deleteForm .btn-secondary { background: transparent; border: 1px solid rgba(148,163,184,0.08); color: var(--text); padding: 0.5rem 0.75rem; border-radius:8px; }
+#deleteForm .primary-btn { padding: 0.5rem 0.75rem; }
+

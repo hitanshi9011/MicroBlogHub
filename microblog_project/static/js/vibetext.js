@@ -445,6 +445,96 @@
     };
 
     // ============================================
+    // Search Highlight & Hashtag Linkify Module
+    // ============================================
+    function escapeRegExp(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    function highlightAndLinkifyInContainer(container, query) {
+        if (!container) return;
+        // Linkify hashtags first
+        const hs = container.querySelectorAll('.post-body');
+        hs.forEach(el => {
+            let html = el.innerHTML;
+            // linkify hashtags
+            html = html.replace(/#(\w+)/g, '<a class="hashtag-chip" href="' + window.location.pathname + '?q=%23$1">#$1</a>');
+            el.innerHTML = html;
+        });
+
+        if (!query) return;
+        const words = query.split(/\s+/).filter(Boolean);
+        if (words.length === 0) return;
+
+        words.forEach(w => {
+            const wEsc = escapeRegExp(w.replace(/^[@#]/, ''));
+            if (!wEsc) return;
+            const regex = new RegExp(`(${wEsc})`, 'gi');
+            hs.forEach(el => {
+                // avoid highlighting inside tags
+                el.innerHTML = el.innerHTML.replace(regex, '<span class="mark-highlight">$1</span>');
+            });
+        });
+    }
+
+    function highlightSearchMatches() {
+        const main = document.querySelector('[data-query]');
+        if (!main) return;
+        const query = (main.dataset.query || '').trim();
+        highlightAndLinkifyInContainer(main, query);
+
+
+    }
+
+    // ============================================
+    // Delete modal handlers (global)
+    // ============================================
+
+    function openDeleteModal(url, postContent) {
+        const modal = document.getElementById('deleteModal');
+        const form = document.getElementById('deleteForm');
+        const text = document.getElementById('deleteModalText');
+        if (!modal || !form || !text) return;
+        form.action = url;
+        text.textContent = postContent && postContent.length ? 'Delete the post: "' + postContent.slice(0,140) + (postContent.length>140 ? '…' : '') + '"?' : 'Are you sure you want to delete this post?';
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+        document.getElementById('cancelDeleteBtn')?.focus();
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteModal');
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
+    function attachDeleteButtons() {
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            if (btn.dataset.deleteAttached) return;
+            btn.addEventListener('click', (e)=>{
+                const url = btn.dataset.deleteUrl;
+                const content = btn.dataset.postContent || '';
+                openDeleteModal(url, content);
+            });
+            btn.dataset.deleteAttached = '1';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+        attachDeleteButtons();
+
+        const cancelBtn = document.getElementById('cancelDeleteBtn');
+        if (cancelBtn) cancelBtn.addEventListener('click', (e)=>{ e.preventDefault(); closeDeleteModal(); });
+
+        const modalOverlay = document.querySelector('#deleteModal .modal-overlay');
+        if (modalOverlay) modalOverlay.addEventListener('click', closeDeleteModal);
+
+        // close modal with Escape
+        document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeDeleteModal(); });
+    });
+
+    // ============================================
     // Animation Styles Injection
     // ============================================
     function injectAnimationStyles() {
@@ -516,6 +606,9 @@
             FormEnhancements.init();
             InteractiveElements.init();
             NavigationModule.init();
+
+            // Highlight matches and linkify hashtags on search results page
+            try { highlightSearchMatches(); } catch (e) { /* non-critical */ }
 
             console.log('✨ MicroBlogHub enhanced JavaScript loaded successfully!');
         } catch (error) {

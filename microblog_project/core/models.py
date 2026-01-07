@@ -21,6 +21,24 @@ class Follow(models.Model):
 
     def __str__(self):
         return f"{self.follower.username} follows {self.following.username}"
+    
+class Post(models.Model):
+    STATUS_CHOICES = (
+        ("published", "Published"),
+        ("draft", "Draft"),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField(max_length=280)
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default="published"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status}"
 
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -41,3 +59,5 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} commented on post {self.post.id}"
+
+
