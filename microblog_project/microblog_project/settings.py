@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -77,15 +80,11 @@ WSGI_APPLICATION = 'microblog_project.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'microblog_db',
-        'USER': 'shared_user',
-        'PASSWORD': 'Shared@12345',
-        'HOST': '172.16.81.120',
-        'PORT': '3306',
-    }
+    'default': dj_database_url.parse(
+        "postgresql://microblog_db_cqca_user:tkqV2s3aILNAjD40sHbLT4Vyz2XgSMT2@dpg-d5d6i7lactks73chtrvg-a.singapore-postgres.render.com/microblog_db_cqca"
+    )
 }
+
 
 
 
