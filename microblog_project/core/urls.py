@@ -7,6 +7,9 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('create-post/', views.create_post, name='create_post'),
+    path('drafts/', views.drafts, name='drafts'),
+    path('publish/<int:post_id>/', views.publish_draft, name='publish_draft'),
+    path('draft/<int:post_id>/action/', views.draft_action, name='draft_action'),
 
     # Edit and delete posts
     path('post/<int:post_id>/', views.post_detail, name='post_detail'),
@@ -22,6 +25,14 @@ urlpatterns = [
     path('comment/<int:post_id>/', views.add_comment, name='add_comment'),
     path('profile/<str:username>/', views.profile, name='profile'),
     path('search/', views.search, name='search'),
+
+    # Community URLs
+    path('communities/', views.community_list, name='community_list'),
+    path('communities/create/', views.create_community, name='create_community'),
+    path('communities/<int:community_id>/', views.community_detail, name='community_detail'),
+    path('communities/<int:community_id>/post/<int:post_id>/delete/', views.delete_community_post, name='delete_community_post'),
+    path('communities/<int:community_id>/post/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
+    path('communities/<int:community_id>/comment/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
 
 
 

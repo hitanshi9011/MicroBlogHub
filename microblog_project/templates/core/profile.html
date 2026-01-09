@@ -66,15 +66,21 @@
 {% if user.is_authenticated and user != profile_user %}
                         <div class="profile-actions">
   {% if is_following %}
-                                <a href="{% url 'unfollow' profile_user.id %}" class="btn-follow btn-unfollow">
-                                    <span class="btn-icon">✓</span>
-                                    <span>Following</span>
-                                </a>
+                                <form method="POST" action="{% url 'unfollow' profile_user.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-follow btn-unfollow">
+                                        <span class="btn-icon">✓</span>
+                                        <span>Following</span>
+                                    </button>
+                                </form>
   {% else %}
-                                <a href="{% url 'follow' profile_user.id %}" class="btn-follow">
-                                    <span class="btn-icon">+</span>
-                                    <span>Follow</span>
-                                </a>
+                                <form method="POST" action="{% url 'follow' profile_user.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-follow">
+                                        <span class="btn-icon">+</span>
+                                        <span>Follow</span>
+                                    </button>
+                                </form>
   {% endif %}
                             <button class="btn-secondary" onclick="showMessageModal()">
                                 <span class="btn-icon">💬</span>

@@ -10,61 +10,7 @@
 <div class="app-shell">
 
   <!-- SIDEBAR -->
-  <aside class="sidebar">
-
-    <div class="brand">
-      <div class="brand-text">
-        <h1>vibetext E3</h1>
-        <p>Express • Engage • Echo</p>
-      </div>
-    </div>
-
-    
-
-    {% if request.user.is_authenticated %}
-    <section class="current-user-card">
-      <div class="avatar avatar-lg">
-        {{ request.user.username|first|upper }}
-      </div>
-      <div class="user-meta">
-        <h2>@{{ request.user.username }}</h2>
-        <p>Logged in user</p>
-      </div>
-
-      <!-- ✅ PROFILE LINK (CORRECT) -->
-      <a href="{% url 'profile' request.user.username %}">
-        View Profile
-      </a>
-    </section>
-    {% else %}
-    <section class="current-user-card guest">
-      <p>
-        <a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Sign up</a> to post and interact.
-      </p>
-    </section>
-    {% endif %}
-
-
-    <section class="people-section">
-      <h3>People</h3>
-
-      {% for u in users %}
-      <div class="person-row">
-        <div class="avatar">{{ u.username|first|upper }}</div>
-        <div class="person-main">
-          <strong>{{ u.username }}</strong>
-        </div>
-
-        {% if u.id in following_ids %}
-          <a href="{% url 'unfollow' u.id %}" class="follow-chip">Unfollow</a>
-        {% else %}
-          <a href="{% url 'follow' u.id %}" class="follow-chip">Follow</a>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </section>
-
-  </aside>
+  {% include 'partials/sidebar.html' %}
 
   <!-- MAIN -->
   <main class="main">
@@ -81,7 +27,19 @@
 
         <div class="composer-footer">
           <span id="charCount">0 / 280</span>
-          <button type="submit" class="primary-btn">Post</button>
+          <div class="composer-actions">
+            <button type="submit" name="action" value="publish" class="primary-btn">Post</button>
+            <!-- save draft (submit) -->
+            <button type="submit" name="action" value="draft" class="icon-btn" title="Save draft" aria-label="Save draft">
+              <!-- pencil icon -->
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#e5e7eb"/></svg>
+            </button>
+            <!-- drafts link merged into icon (folder glyph to differentiate) -->
+            <a href="{% url 'drafts' %}" class="icon-btn" title="Drafts" aria-label="Drafts">
+              <!-- folder icon -->
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 4H2v16h20V6H12l-2-2z" fill="#e5e7eb"/></svg>
+            </a>
+          </div>
         </div>
       </form>
     </section>
@@ -120,17 +78,24 @@
           <footer class="post-footer">
             <div class="post-actions">
               <div class="like-section">
-                {% if post.id in liked_posts %}
-                  <a href="{% url 'unlike' post.id %}" class="action-btn liked">
-                    <span class="action-icon">❤️</span>
-                    <span class="action-count">{{ post.like_count }}</span>
-                  </a>
-                {% else %}
-                  <a href="{% url 'like' post.id %}" class="action-btn">
-                    <span class="action-icon">🤍</span>
-                    <span class="action-count">{{ post.like_count }}</span>
-                  </a>
-                {% endif %}
+                  {% if post.is_community %}
+                    <span class="action-btn">
+                      <span class="action-icon">🤍</span>
+                      <span class="action-count">{{ post.like_count }}</span>
+                    </span>
+                  {% else %}
+                    {% if post.id in liked_posts %}
+                      <a href="{% url 'unlike' post.id %}" class="action-btn liked">
+                        <span class="action-icon">❤️</span>
+                        <span class="action-count">{{ post.like_count }}</span>
+                      </a>
+                    {% else %}
+                      <a href="{% url 'like' post.id %}" class="action-btn">
+                        <span class="action-icon">🤍</span>
+                        <span class="action-count">{{ post.like_count }}</span>
+                      </a>
+                    {% endif %}
+                  {% endif %}
               </div>
               <div class="comment-toggle">
                 <button type="button" class="action-btn comment-btn" onclick="toggleComments(this)" aria-label="Toggle comments">
