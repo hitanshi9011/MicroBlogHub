@@ -638,3 +638,25 @@ def create_community(request):
         return redirect('community_list')
 
     return render(request, 'community_create.html')
+
+
+@login_required
+def delete_community(request, community_id):
+    """Allow the community owner to delete a community.
+
+    GET: render a confirmation page.
+    POST: perform delete and redirect to community list.
+    """
+    community = get_object_or_404(Community, id=community_id)
+
+    # Only community creator can delete the community
+    if request.user != community.created_by:
+        messages.error(request, "You don't have permission to delete this community")
+        return redirect('community_detail', community_id=community.id)
+
+    if request.method == 'POST':
+        community.delete()
+        messages.success(request, 'Community deleted')
+        return redirect('community_list')
+
+    return render(request, 'confirm_delete_community.html', {'community': community})

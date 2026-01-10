@@ -4,6 +4,11 @@
 {% block content %}
 <section class="container full-width community-detail">
   <h1>{{ community.name }}</h1>
+  {% if request.user.is_authenticated and community.created_by and request.user == community.created_by %}
+    <div style="margin-top:0.5rem;">
+      <a href="{% url 'delete_community' community.id %}" class="icon-btn" title="Delete community">🗑️ Delete community</a>
+    </div>
+  {% endif %}
   <p class="communuty-desc">{{ community.description }}</p>
 
   <section class="community-composer composer-card">

@@ -33,6 +33,7 @@ urlpatterns = [
     path('communities/<int:community_id>/post/<int:post_id>/delete/', views.delete_community_post, name='delete_community_post'),
     path('communities/<int:community_id>/post/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
     path('communities/<int:community_id>/comment/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
+    path('communities/<int:community_id>/delete/', views.delete_community, name='delete_community'),
 
 
 

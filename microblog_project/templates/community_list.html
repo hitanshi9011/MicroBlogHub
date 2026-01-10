@@ -15,9 +15,21 @@
       <ul class="community-list">
         {% for c in communities %}
           <li class="community-item post">
-            <a href="{% url 'community_detail' c.id %}"><strong>{{ c.name }}</strong></a>
-            <p>{{ c.description|default:"No description" }}</p>
-            <small>Created by: {% if c.created_by %}{{ c.created_by.username }}{% else %}system{% endif %}</small>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+              <div>
+                <a href="{% url 'community_detail' c.id %}"><strong>{{ c.name }}</strong></a>
+                <p>{{ c.description|default:"No description" }}</p>
+                <small>Created by: {% if c.created_by %}{{ c.created_by.username }}{% else %}system{% endif %}</small>
+              </div>
+              <div>
+                {% if request.user.is_authenticated and c.created_by and request.user == c.created_by %}
+                  <form method="POST" action="{% url 'delete_community' c.id %}" style="display:inline;" onsubmit="return confirm('Delete this community?');">
+                    {% csrf_token %}
+                    <button type="submit" class="icon-btn" title="Delete community">🗑️</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
           </li>
         {% empty %}
           <li>No communities yet.</li>
