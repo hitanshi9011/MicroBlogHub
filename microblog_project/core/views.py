@@ -12,6 +12,19 @@ from .models import Comment
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from .models import Post, Follow
+from .forms import EditUserForm, ProfilePhotoForm
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
+from .models import Profile
+from django.conf import settings
+import os
+import logging
+import time
+from django.utils.text import get_valid_filename
+from django.http import HttpResponseForbidden
+
+logger = logging.getLogger(__name__)
+
 
 
 def home(request):
@@ -90,8 +103,12 @@ def profile(request, username):
             following=profile_user
         ).exists()
 
+    # Get or create profile
+    profile, created = Profile.objects.get_or_create(user=profile_user)
+
     context = {
         'profile_user': profile_user,
+        'profile': profile,
         'posts': posts,
         'followers_count': followers_count,
         'following_count': following_count,
@@ -224,6 +241,8 @@ def register(request):
 
         user = User.objects.create_user(username=username, password=password)
         user.save()
+        # Create profile for the new user
+        Profile.objects.create(user=user)
         messages.success(request, 'Account created successfully')
         return redirect('login')
 
@@ -354,3 +373,67 @@ def delete_post(request, post_id):
         return redirect('home')
 
     return render(request, 'confirm_delete.html', {'post': post})
+
+@login_required
+def edit_profile(request):
+    profile, _ = Profile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        if 'save_profile' in request.POST:
+            user_form = EditUserForm(request.POST, instance=request.user)
+            profile_form = ProfilePhotoForm(
+                request.POST, request.FILES, instance=profile
+            )
+
+            if user_form.is_valid() and profile_form.is_valid():
+                user_form.save()
+                profile_form.save()
+                messages.success(request, 'Profile updated successfully!')
+                return redirect('profile', request.user.username)
+
+        elif 'change_password' in request.POST:
+            password_form = PasswordChangeForm(request.user, request.POST)
+            if password_form.is_valid():
+                user = password_form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Password changed successfully!')
+                return redirect('profile', request.user.username)
+        else:
+            password_form = PasswordChangeForm(user=request.user)
+    else:
+        user_form = EditUserForm(instance=request.user)
+        profile_form = ProfilePhotoForm(instance=profile)
+        password_form = PasswordChangeForm(user=request.user)
+
+    return render(request, 'core/edit_profile.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'password_form': password_form,
+    })
+
+@login_required
+def delete_account(request):
+    if request.method == "POST":
+        user = request.user
+        logout(request)
+        user.delete()
+        return redirect('login') 
+
+
+@login_required
+def list_profile_files(request):
+    """Staff-only debug view: list files in MEDIA_ROOT/profile_photos/ with URLs."""
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Forbidden")
+
+    photos_dir = os.path.join(settings.MEDIA_ROOT, 'profile_photos')
+    files = []
+    if os.path.isdir(photos_dir):
+        for fname in sorted(os.listdir(photos_dir)):
+            if fname.startswith('.'):
+                continue
+            url = f"{settings.MEDIA_URL}profile_photos/{fname}"
+            files.append({'name': fname, 'url': url})
+
+    return render(request, 'debug/profile_files.html', {'files': files})
+

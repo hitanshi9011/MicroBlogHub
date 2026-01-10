@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile Files (Debug){% endblock %}
+
+{% block content %}
+<div style="max-width:900px;margin:2rem auto;padding:1rem;">
+  <h2>Uploaded Profile Photos (debug)</h2>
+  {% if files %}
+    <ul>
+      {% for f in files %}
+        <li style="margin-bottom:0.75rem;">
+          <a href="{{ f.url }}" target="_blank">{{ f.name }}</a>
+          <br>
+          <img src="{{ f.url }}" alt="{{ f.name }}" style="max-width:120px;max-height:120px;border-radius:8px;margin-top:0.25rem;">
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No files found in media/profile_photos/</p>
+  {% endif %}
+  <p><a href="/">Back to home</a></p>
+</div>
+{% endblock %}

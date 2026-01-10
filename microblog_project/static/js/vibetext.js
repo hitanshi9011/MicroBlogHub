@@ -272,12 +272,12 @@
             
             forms.forEach(form => {
                 // Add loading state to submit buttons
-                form.addEventListener('submit', (e) => {
-                    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
-                    if (submitBtn && !form.dataset.preventLoading) {
+                const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+                if (submitBtn && !form.dataset.preventLoading) {
+                    submitBtn.addEventListener('click', (e) => {
                         this.setLoadingState(submitBtn, true);
-                    }
-                });
+                    });
+                }
 
                 // Add validation feedback
                 const inputs = form.querySelectorAll('input, textarea');
@@ -297,14 +297,12 @@
 
         setLoadingState(button, isLoading) {
             if (isLoading) {
-                button.disabled = true;
                 button.dataset.originalText = button.textContent || button.value;
                 button.textContent = button.textContent ? 'Loading...' : '';
                 button.value = button.value ? 'Loading...' : '';
                 button.style.opacity = '0.7';
                 button.style.cursor = 'wait';
             } else {
-                button.disabled = false;
                 button.textContent = button.dataset.originalText || button.textContent;
                 button.value = button.dataset.originalText || button.value;
                 button.style.opacity = '1';

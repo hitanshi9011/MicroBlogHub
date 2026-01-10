@@ -23,9 +23,15 @@
 
     {% if request.user.is_authenticated %}
     <section class="current-user-card">
+      {% if request.user.profile.photo %}
+      <div class="avatar avatar-lg">
+        <img src="{{ request.user.profile.photo.url }}{% if request.user.profile.photo.name %}?v={{ request.user.profile.photo.name }}{% endif %}" alt="{{ request.user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+      </div>
+      {% else %}
       <div class="avatar avatar-lg">
         {{ request.user.username|first|upper }}
       </div>
+      {% endif %}
       <div class="user-meta">
         <h2>@{{ request.user.username }}</h2>
         <p>Logged in user</p>
@@ -50,7 +56,11 @@
 
       {% for u in users %}
       <div class="person-row">
-        <div class="avatar">{{ u.username|first|upper }}</div>
+        {% if u.profile.photo %}
+          <div class="avatar"><img src="{{ u.profile.photo.url }}{% if u.profile.photo.name %}?v={{ u.profile.photo.name }}{% endif %}" alt="{{ u.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" /></div>
+        {% else %}
+          <div class="avatar">{{ u.username|first|upper }}</div>
+        {% endif %}
         <div class="person-main">
           <strong>{{ u.username }}</strong>
         </div>
@@ -72,7 +82,11 @@
     <!-- COMPOSER -->
     {% if request.user.is_authenticated %}
     <section class="composer-card">
-      <div class="avatar">{{ request.user.username|first|upper }}</div>
+      {% if request.user.profile.photo %}
+        <div class="avatar"><img src="{{ request.user.profile.photo.url }}{% if request.user.profile.photo.name %}?v={{ request.user.profile.photo.name }}{% endif %}" alt="{{ request.user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" /></div>
+      {% else %}
+        <div class="avatar">{{ request.user.username|first|upper }}</div>
+      {% endif %}
 
       <form method="POST" action="{% url 'create_post' %}" class="composer-main">
         {% csrf_token %}
@@ -99,7 +113,11 @@
       <article class="post">
 
         <div class="avatar">
-          {{ post.user.username|first|upper }}
+          {% if post.user.profile.photo %}
+            <img src="{{ post.user.profile.photo.url }}{% if post.user.profile.photo.name %}?v={{ post.user.profile.photo.name }}{% endif %}" alt="{{ post.user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+          {% else %}
+            {{ post.user.username|first|upper }}
+          {% endif %}
         </div>
 
         <div class="post-main">
@@ -219,7 +237,7 @@
       <div class="trending-posts">
         {% for tpost in trending_posts %}
           <div class="tpost-row">
-            <div class="avatar">{{ tpost.user.username|first|upper }}</div>
+            <div class="avatar">{% if tpost.user.profile.photo %}<img src="{{ tpost.user.profile.photo.url }}{% if tpost.user.profile.photo.name %}?v={{ tpost.user.profile.photo.name }}{% endif %}" alt="{{ tpost.user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />{% else %}{{ tpost.user.username|first|upper }}{% endif %}</div>
             <div class="tpost-main">
               <a href="{% url 'profile' tpost.user.username %}"><strong>{{ tpost.user.username }}</strong></a>
               <a href="{% url 'post_detail' tpost.id %}" class="tpost-link"><p class="tpost-snippet">{{ tpost.content|truncatechars:60 }}</p></a>

@@ -1,15 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class Post(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(max_length=280)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username}: {self.content[:30]}"
-
-
 class Follow(models.Model):
     follower = models.ForeignKey(
         User, related_name='following', on_delete=models.CASCADE
@@ -22,6 +13,10 @@ class Follow(models.Model):
     def __str__(self):
         return f"{self.follower.username} follows {self.following.username}"
     
+from django.contrib.auth.models import User
+from django.db import models
+
+
 class Post(models.Model):
     STATUS_CHOICES = (
         ("published", "Published"),
@@ -39,6 +34,24 @@ class Post(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.status}"
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sent_messages"
+    )
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_messages"
+    )
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender} → {self.recipient}"
 
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -60,4 +73,13 @@ class Comment(models.Model):
     def __str__(self):
         return f"{self.user.username} commented on post {self.post.id}"
 
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    photo = models.ImageField(upload_to='profile_photos/', default='profile_photos/default.png', blank=True, null=True)
+    bio = models.TextField(max_length=160, blank=True, default='')
+
+    def __str__(self):
+        return self.user.username
 

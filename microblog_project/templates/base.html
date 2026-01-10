@@ -216,7 +216,13 @@
                         Profile
                     </a>
                     <div class="user-greeting">
-                        <div class="user-avatar-nav">{{ user.username|first|upper }}</div>
+                        {% if user.profile.photo %}
+                            <div class="user-avatar-nav">
+                                <img src="{{ user.profile.photo.url }}{% if user.profile.photo.name %}?v={{ user.profile.photo.name }}{% endif %}" alt="{{ user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+                            </div>
+                        {% else %}
+                            <div class="user-avatar-nav">{{ user.username|first|upper }}</div>
+                        {% endif %}
                         <span>Hi, <strong>{{ user.username }}</strong></span>
                     </div>
                     <a href="{% url 'logout' %}" class="btn-logout">Logout</a>

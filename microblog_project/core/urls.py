@@ -22,6 +22,11 @@ urlpatterns = [
     path('comment/<int:post_id>/', views.add_comment, name='add_comment'),
     path('profile/<str:username>/', views.profile, name='profile'),
     path('search/', views.search, name='search'),
+     path('edit-profile/', views.edit_profile, name='edit_profile'),
+    path('delete-account/', views.delete_account, name='delete_account'),
+    # Debug: list uploaded profile photos (staff only)
+    path('debug/profile-files/', views.list_profile_files, name='debug_profile_files'),
+
 
 
 

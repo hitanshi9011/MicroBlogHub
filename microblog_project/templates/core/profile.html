@@ -16,9 +16,23 @@
         <div class="profile-header-wrapper">
             <div class="profile-header-card">
                 <div class="profile-avatar-container">
-                    <div class="profile-avatar-large">
-                        {{ profile_user.username|first|upper }}
-                    </div>
+                    {% if profile.photo and profile.photo.url %}
+
+                        <div class="profile-avatar-large">
+                            {% if profile.photo and profile.photo.url %}
+    <div class="profile-avatar-large">
+        <img src="{{ profile.photo.url }}"
+             alt="{{ profile_user.username }} profile photo"
+             style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+    </div>
+                   {% else %}
+    <div class="profile-avatar-large">
+                    {{ profile_user.username|first|upper }}
+    </div>
+                    {% endif %}
+
+                        </div>
+                    {% endif %}
                     <div class="avatar-ring"></div>
                     {% if user.is_authenticated and user == profile_user %}
                         <div class="avatar-badge">
@@ -34,9 +48,20 @@
                             <span class="profile-badge verified">✓ Verified</span>
                         {% endif %}
                     </div>
+                    <!-- Small centered avatar above the stats to ensure visibility -->
+                    <div class="profile-header-mini-avatar">
+                        {% if profile.photo and profile.photo.url %}
+                         <img src="{{ profile.photo.url }}" class="profile-avatar-mini">
+                        {% endif %}
+
+                    </div>
                     
                     <div class="profile-bio">
-                        <p>Welcome to my profile! 🚀</p>
+                        {% if profile.bio %}
+                            <p>{{ profile.bio }}</p>
+                        {% else %}
+                            <p>Welcome to my profile! 🚀</p>
+                        {% endif %}
                     </div>
                     
                     <div class="profile-stats">
@@ -83,12 +108,20 @@
                         </div>
                     {% elif user.is_authenticated and user == profile_user %}
                         <div class="profile-actions">
-                            <button class="btn-secondary" onclick="editProfile()">
+                            <a href="{% url 'edit_profile' %}" class="btn-secondary">
                                 <span class="btn-icon">✏️</span>
                                 <span>Edit Profile</span>
-                            </button>
+                            </a>
                         </div>
 {% endif %}
+<form method="POST" action="{% url 'delete_account' %}">
+  {% csrf_token %}
+  <button type="submit" class="danger-btn"
+          onclick="return confirm('Are you sure you want to delete your account? This cannot be undone.')">
+    Delete Account
+  </button>
+</form>
+
                 </div>
             </div>
         </div>
@@ -116,7 +149,12 @@
                         <div class="post-card-header">
                             <div class="post-header-left">
                                 <div class="post-card-avatar">
+                                    {% if profile.photo and profile.photo.url %}
+                                        <img src="{{ profile.photo.url }}"
+                                        style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+                                    {% else %}
                                     {{ profile_user.username|first|upper }}
+                                    {% endif %}
                                 </div>
                                 <div class="post-card-meta">
                                     <a href="{% url 'profile' profile_user.username %}" class="post-card-author">
@@ -370,6 +408,21 @@
         padding: 2rem 0;
         border-top: 1px solid var(--border);
         border-bottom: 1px solid var(--border);
+    }
+
+    .profile-header-mini-avatar {
+        text-align: center;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .profile-avatar-mini {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--bg);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.35);
     }
 
     .stat-item {
