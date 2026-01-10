@@ -1,0 +1,23 @@
+{% for n in notifications %}
+<li class="notification-item {% if not n.is_read %}unread{% endif %}">
+  <a href="{% url 'notification_redirect' n.id %}">
+    
+    <div class="notification-text">
+      {% if n.notification_type == "like" %}
+        <strong>@{{ n.sender.username }}</strong> liked your post
+      {% elif n.notification_type == "comment" %}
+        <strong>@{{ n.sender.username }}</strong> commented on your post
+      {% elif n.notification_type == "follow" %}
+        <strong>@{{ n.sender.username }}</strong> started following you
+      {% endif %}
+    </div>
+
+    <div class="notification-time">
+      {{ n.created_at|timesince }} ago
+    </div>
+
+  </a>
+</li>
+{% empty %}
+<p class="no-notifications">No notifications</p>
+{% endfor %}

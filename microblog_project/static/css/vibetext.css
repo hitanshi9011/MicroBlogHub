@@ -137,11 +137,36 @@ a:hover {
   font-weight: 600;
 }
 
-.avatar-lg {
-  width: 44px;
-  height: 44px;
-  font-size: 1.2rem;
+/* BIG PROFILE CARD AVATAR (LEFT SIDEBAR) */
+/* SCALLOPED (WAVY) AVATAR — LEFT PROFILE CARD ONLY */
+.avatar.avatar-lg {
+  width: 90px;
+  height: 90px;
+
+  background: linear-gradient(135deg, #4f46e5, #22c55e);
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 32px;
+  font-weight: 700;
+
+  /* 🔥 SCALLOPED SHAPE */
+  clip-path: polygon(
+    50% 0%, 60% 6%, 72% 4%, 82% 12%, 94% 22%,
+    96% 36%, 100% 50%, 96% 64%, 94% 78%,
+    82% 88%, 72% 96%, 60% 94%, 50% 100%,
+    40% 94%, 28% 96%, 18% 88%, 6% 78%,
+    4% 64%, 0% 50%, 4% 36%, 6% 22%,
+    18% 12%, 28% 4%, 40% 6%
+  );
+
+  margin: 0 auto 12px;
 }
+
+
 
 /* PEOPLE */
 .people-section h3 {

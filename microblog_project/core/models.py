@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
 
 class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -11,18 +12,18 @@ class Post(models.Model):
     def __str__(self):
         return f"{self.user.username}: {self.content[:30]}"
 
-
 class Follow(models.Model):
-    follower = models.ForeignKey(
-        User, related_name='following', on_delete=models.CASCADE
-    )
-    following = models.ForeignKey(
-        User, related_name='followers', on_delete=models.CASCADE
-    )
+    follower = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following_set', on_delete=models.CASCADE)
+    following = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='followers_set', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['follower', 'following'], name='unique_follow')
+        ]
+
     def __str__(self):
-        return f"{self.follower.username} follows {self.following.username}"
+        return f"{self.follower} -> {self.following}"
 
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -37,12 +38,36 @@ class Like(models.Model):
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    text = models.TextField(max_length=500)
+    post = models.ForeignKey('Post', on_delete=models.CASCADE)
+    text = models.TextField()
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='replies'
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
+
 
     def __str__(self):
         return f"{self.user.username} commented on post {self.post.id}"
+    
+class CommentLike(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    comment = models.ForeignKey(
+        Comment,
+        on_delete=models.CASCADE,
+        related_name="likes"
+    )
+
+    class Meta:
+        unique_together = ('user', 'comment')
+
+    def __str__(self):
+        return f"{self.user.username} liked comment {self.comment.id}"
+
 
 class Message(models.Model):
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
@@ -57,8 +82,7 @@ class Message(models.Model):
     def __str__(self):
         return f"From {self.sender.username} to {self.recipient.username}"
     
-    from django.db import models
-from django.contrib.auth.models import User
+
 
 class Profile(models.Model):
     user = models.OneToOneField(
@@ -76,26 +100,35 @@ class Profile(models.Model):
     def __str__(self):
         return self.user.username
 
+
+from django.db import models
+from django.contrib.auth.models import User
+
 class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('follow', 'Follow'),
+        ('like', 'Like'),
+        ('comment', 'Comment'),
+    )
+
     sender = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="sent_notifications"
+        related_name='sent_notifications'
     )
-    receiver = models.ForeignKey(
+
+    recipient = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name="notifications"
+        related_name='received_notifications'
     )
 
     notification_type = models.CharField(
         max_length=20,
-        choices=[
-            ('like', 'Like'),
-            ('comment', 'Comment'),
-            ('follow', 'Follow'),
-        ]
+        choices=NOTIFICATION_TYPES
     )
+    
+    
 
     post = models.ForeignKey(
         'Post',
@@ -108,5 +141,12 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.sender} → {self.receiver} ({self.notification_type})"
+        return f"{self.sender} → {self.recipient} ({self.notification_type})"
+    
+    def get_redirect_url(self):
+        if self.notification_type in ["like", "comment"] and self.post:
+            return f"/posts/{self.post.id}/"
+        if self.notification_type == "follow":
+            return f"/profile/{self.sender.username}/"
+        return "#"
 

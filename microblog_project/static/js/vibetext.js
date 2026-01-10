@@ -662,6 +662,7 @@
     }
     
     
+    
 
     // Start the application
     init();
@@ -676,3 +677,53 @@ function confirmDeleteComment(event) {
     }
     return true;
 }
+
+
+
+
+// ===============================
+// 🔔 Notifications (GLOBAL)
+// ===============================
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie) {
+        document.cookie.split(';').forEach(cookie => {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            }
+        });
+    }
+    return cookieValue;
+}
+
+
+function openNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    if (!popup) return;
+
+    popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+
+    fetch('/notifications/mark-as-read/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+        }
+    })
+    .then(res => res.json())
+    .then(() => {
+        const badge = document.querySelector('.notification-badge');
+        if (badge) badge.remove();
+    })
+    .catch(err => console.error('Notification error:', err));
+}
+
+function closeNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    if (popup) popup.style.display = 'none';
+}
+
+
+
+
