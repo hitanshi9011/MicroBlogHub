@@ -11,7 +11,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="{% static 'js/vibetext.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
     <style>
+        /* Force a consistent dark page background in case other styles conflict */
+        html, body {
+            background: radial-gradient(circle at top, #1e293b, #020617 60%) !important;
+            color: #e5e7eb !important;
+            min-height: 100%;
+        }
+
         /* Enhanced Navigation */
         .top-nav {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -216,9 +224,9 @@
                         Profile
                     </a>
                     <div class="user-greeting">
-                        {% if user.profile.photo %}
+                        {% if profile and profile.photo %}
                             <div class="user-avatar-nav">
-                                <img src="{{ user.profile.photo.url }}{% if user.profile.photo.name %}?v={{ user.profile.photo.name }}{% endif %}" alt="{{ user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+                                <img src="{{ profile.photo.url }}{% if profile.photo.name %}?v={{ profile.photo.name }}{% endif %}" alt="{{ user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
                             </div>
                         {% else %}
                             <div class="user-avatar-nav">{{ user.username|first|upper }}</div>

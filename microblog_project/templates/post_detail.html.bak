@@ -19,7 +19,7 @@
           </div>
         </header>
 
-        <p class="post-body">{{ post.content|urlize|linebreaksbr }}</p>
+        <p class="post-body">{{ post.content }}</p>
 
         <footer class="post-footer">
           <div class="post-actions">
@@ -49,7 +49,7 @@
                   <a href="{% url 'profile' comment.user.username %}"><strong>{{ comment.user.username }}</strong></a>
                   <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
                 </div>
-                <div class="comment-text">{{ comment.text|urlize|linebreaksbr }}</div>
+                <div class="comment-text">{{ comment.text }}</div>
               </div>
             </div>
           {% empty %}

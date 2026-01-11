@@ -22,6 +22,8 @@ import logging
 import time
 from django.utils.text import get_valid_filename
 from django.http import HttpResponseForbidden
+from django.core.files.storage import default_storage
+from django.templatetags.static import static
 
 logger = logging.getLogger(__name__)
 
@@ -88,34 +90,51 @@ def home(request):
 def profile(request, username):
     profile_user = get_object_or_404(User, username=username)
 
-    posts = Post.objects.filter(user=profile_user).select_related('user').annotate(
-        like_count=Count('like', distinct=True),
-        comment_count=Count('comment', distinct=True)
-    ).order_by('-created_at')
+    posts = (
+        Post.objects
+        .filter(user=profile_user)
+        .select_related('user')
+        .annotate(
+            like_count=Count('like', distinct=True),
+            comment_count=Count('comment', distinct=True)
+        )
+        .order_by('-created_at')
+    )
 
+    posts_count = posts.count()
     followers_count = Follow.objects.filter(following=profile_user).count()
     following_count = Follow.objects.filter(follower=profile_user).count()
 
     is_following = False
-    if request.user.is_authenticated:
+    if request.user.is_authenticated and request.user != profile_user:
         is_following = Follow.objects.filter(
             follower=request.user,
             following=profile_user
         ).exists()
 
-    # Get or create profile
-    profile, created = Profile.objects.get_or_create(user=profile_user)
+    profile, _ = Profile.objects.get_or_create(user=profile_user)
+
+    photo_url = None
+    try:
+        if profile.photo and getattr(profile.photo, 'name', None):
+            if default_storage.exists(str(profile.photo.name)):
+                photo_url = profile.photo.url
+    except Exception:
+        pass
 
     context = {
         'profile_user': profile_user,
         'profile': profile,
+        'photo_url': photo_url,
         'posts': posts,
+        'posts_count': posts_count,
         'followers_count': followers_count,
         'following_count': following_count,
         'is_following': is_following,
     }
 
     return render(request, 'core/profile.html', context)
+
 
 
 def post_detail(request, post_id):
@@ -388,7 +407,6 @@ def edit_profile(request):
             if user_form.is_valid() and profile_form.is_valid():
                 user_form.save()
                 profile_form.save()
-                messages.success(request, 'Profile updated successfully!')
                 return redirect('profile', request.user.username)
 
         elif 'change_password' in request.POST:
@@ -436,4 +454,44 @@ def list_profile_files(request):
             files.append({'name': fname, 'url': url})
 
     return render(request, 'debug/profile_files.html', {'files': files})
+
+def followers_list(request, username):
+    user = get_object_or_404(User, username=username)
+
+    followers = Follow.objects.filter(
+        following=user
+    ).select_related('follower')
+
+    return render(request, 'core/followers.html', {
+        'profile_user': user,
+        'followers': followers
+    })
+
+
+
+def following_list(request, username):
+    user = get_object_or_404(User, username=username)
+
+    following = Follow.objects.filter(
+        follower=user
+    ).select_related('following')
+
+    return render(request, 'core/following.html', {
+        'profile_user': user,
+        'following': following
+    })
+
+
+
+
+
+def user_posts(request, username):
+    profile_user = get_object_or_404(User, username=username)
+    posts = Post.objects.filter(user=profile_user)
+
+    return render(request, 'core/user_posts.html', {
+        'profile_user': profile_user,
+        'posts': posts
+    })
+
 

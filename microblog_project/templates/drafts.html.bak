@@ -2,7 +2,7 @@
 
 {% for post in drafts %}
   <div class="post draft">
-    <p>{{ post.content|urlize|linebreaksbr }}</p>
+    <p>{{ post.content }}</p>
 
     <a href="{% url 'publish_draft' post.id %}">Publish</a>
     <a href="{% url 'delete_post' post.id %}">Delete</a>

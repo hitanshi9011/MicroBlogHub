@@ -26,6 +26,9 @@ urlpatterns = [
     path('delete-account/', views.delete_account, name='delete_account'),
     # Debug: list uploaded profile photos (staff only)
     path('debug/profile-files/', views.list_profile_files, name='debug_profile_files'),
+    path('profile/<str:username>/posts/', views.user_posts, name='user_posts'),
+     path('profile/<str:username>/followers/', views.followers_list, name='followers'),
+    path('profile/<str:username>/following/', views.following_list, name='following'),
 
 
 

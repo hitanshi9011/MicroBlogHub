@@ -66,6 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
+                'core.context_processors.current_profile',
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -137,5 +138,11 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = r'C:\Users\TRUPTI\OneDrive\Desktop\microbloghub\media'
+
+STATIC_URL = '/static/'
+
+# Optional if using collectstatic
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
 

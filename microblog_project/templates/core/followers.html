@@ -1,0 +1,27 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+
+<div class="profile-page">
+    <h2>Followers</h2>
+
+    <ul class="profile-list">
+        {% for follow in followers %}
+        <li class="follower-card">
+            <img src="{{ follow.follower.profile.image.url }}" alt="Avatar">
+
+            <div class="profile-info">
+                <strong>{{ follow.follower.username }}</strong>
+            </div>
+
+            <a href="{% url 'profile' follow.follower.username %}" class="view-btn">
+                View
+            </a>
+        </li>
+        {% empty %}
+        <p class="empty-text">No followers yet.</p>
+        {% endfor %}
+    </ul>
+
+    <a href="{% url 'home' %}" class="back-home-btn">🏠 Back to Home</a>
+</div>
+

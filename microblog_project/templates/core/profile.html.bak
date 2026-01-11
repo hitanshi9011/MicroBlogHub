@@ -179,7 +179,7 @@
                         </div>
                         
                         <div class="post-card-body">
-    <a href="{% url 'post_detail' post.id %}" class="profile-post-link"><p>{{ post.content|urlize|linebreaksbr }}</p></a>
+    <a href="{% url 'post_detail' post.id %}" class="profile-post-link"><p>{{ post.content }}</p></a>
                         </div>
 
                         <div class="post-card-footer">
