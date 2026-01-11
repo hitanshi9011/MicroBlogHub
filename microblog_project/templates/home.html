@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home | MicroBlogHub{% endblock %}
+
+{% block content %}
+
+<script src="{% static 'js/vibetext.js' %}"></script>
+
+<!-- Messages Display -->
+{% if messages %}
+<div class="messages-container">
+  {% for message in messages %}
+  <div class="message-alert {% if message.tags %}{{ message.tags }}{% endif %}">
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="app-shell">
+
+<!-- ================= SIDEBAR ================= -->
+<aside class="sidebar">
+
+  <div class="brand">
+  </div>
+
+  <!-- Notifications -->
+  
+
+  <div id="notificationPopup" class="notification-popup" style="display:none;">
+    <div class="notification-header">
+      <h3>Notifications</h3>
+      <button class="close-btn" onclick="closeNotificationPopup()">×</button>
+    </div>
+    <div class="notification-body">
+      {% if unread_notifications and unread_notifications.count %}
+      <ul class="notification-list">
+        {% for n in unread_notifications %}
+        <li class="notification-item">
+          <p>{{ n.message }}</p>
+          <small>{{ n.created_at|timesince }} ago</small>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="no-notifications">No new notifications</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Current User -->
+  <section class="current-user-card">
+    <div class="avatar avatar-lg">
+      {{ request.user.username|first|upper }}
+    </div>
+    <div class="user-meta">
+      <h2>@{{ request.user.username }}</h2>
+      <p>Logged in user</p>
+    </div>
+    <a href="{% url 'profile' request.user.username %}">View Profile</a>
+  </section>
+
+  <!-- ================= PEOPLE SECTION ================= -->
+  <section class="people-section">
+    <h3>People</h3>
+
+    {% if users %}
+      {% for u in users %}
+      <div class="person-row">
+
+        <!-- Avatar -->
+        <a href="{% url 'profile' u.username %}" class="avatar-link">
+          <div class="avatar">{{ u.username|first|upper }}</div>
+        </a>
+        
+
+        <!-- Username -->
+        <div class="person-main">
+          <a href="{% url 'profile' u.username %}">@{{ u.username }}</a>
+          {% if u.profile and u.profile.bio %}
+            <p class="person-bio">{{ u.profile.bio|truncatechars:60 }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Actions -->
+        <div class="person-actions">
+          <a href="{% url 'conversation' u.username %}" class="message-chip" title="Message">✉️</a>
+
+          {% if following_ids and u.id in following_ids %}
+            <a href="{% url 'unfollow' u.id %}" class="follow-chip">Unfollow</a>
+          {% else %}
+            <a href="{% url 'follow' u.id %}" class="follow-chip">Follow</a>
+          {% endif %}
+        </div>
+
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="no-people-msg">No people to suggest right now.</p>
+    {% endif %}
+  </section>
+
+</aside>
+
+<!-- ================= MAIN CONTENT ================= -->
+<main class="main">
+
+  <!-- Composer -->
+  <section class="composer-card">
+    <div class="avatar">{{ request.user.username|first|upper }}</div>
+
+    <form method="POST" action="{% url 'create_post' %}" class="composer-main">
+      {% csrf_token %}
+      <textarea name="content" rows="3"
+        placeholder="What's happening?" required></textarea>
+      <div class="composer-footer">
+        <button type="submit" class="primary-btn">Post</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ================= POSTS ================= -->
+  <section class="posts-list">
+    {% for post in posts %}
+    <article class="post">
+
+      <a href="{% url 'profile' post.user.username %}" class="post-avatar-link">
+        <div class="avatar post-avatar">
+          {{ post.user.username|first|upper }}
+        </div>
+      </a>
+
+      <div class="post-main">
+        <header class="post-header">
+          <a href="{% url 'profile' post.user.username %}" class="post-author-link">
+            @{{ post.user.username }}
+          </a>
+          <span class="post-dot">·</span>
+          <span class="post-time">{{ post.created_at|timesince }} ago</span>
+        </header>
+
+        <p class="post-body">{{ post.content }}</p>
+
+        <!-- Likes -->
+        <div class="like-section">
+          {% if user.is_authenticated %}
+            {% if post.id in liked_posts %}
+              <a href="{% url 'unlike' post.id %}" class="action-btn liked-btn">
+                ❤️ {{ post.like_set.count }}
+              </a>
+            {% else %}
+              <a href="{% url 'like' post.id %}" class="action-btn">
+                🤍 {{ post.like_set.count }}
+              </a>
+            {% endif %}
+          {% else %}
+            <span class="action-btn disabled">🤍 {{ post.like_set.count }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Comments -->
+       <!-- Comments -->
+       <section class="comments-section">
+
+        {% for comment in post.comment_set.all %}
+          {% if not comment.parent %}
+          <div class="yt-comment">
+        
+            <!-- Avatar -->
+            
+            <!-- Comment Body -->
+            <div class="yt-body">
+        
+              <div class="yt-header">
+                <span class="yt-username">@{{ comment.user.username }}</span>
+                <span class="yt-time">{{ comment.created_at|timesince }} ago</span>
+              </div>
+        
+              <div class="yt-text" id="comment-text-{{ comment.id }}">
+                {{ comment.text }}
+              </div>
+        
+              <!-- Actions -->
+              <!-- Actions -->
+<div class="yt-actions">
+  <button onclick="toggleReply('{{ comment.id }}')">Reply</button>
+
+  <a href="{% url 'toggle_comment_like' comment.id %}" class="comment-like-btn">
+    {% if comment.id in liked_comments %}
+      ❤️ {{ comment.likes.count }}
+    {% else %}
+      🤍 {{ comment.likes.count }}
+    {% endif %}
+  </a>
+
+  {% if user == comment.user %}
+    <button onclick="toggleEdit('{{ comment.id }}')">Edit</button>
+    <a href="{% url 'delete_comment' comment.id %}" class="danger">Delete</a>
+  {% endif %}
+</div>
+
+        
+              <!-- Edit form -->
+              {% if user == comment.user %}
+              <form method="POST"
+                    action="{% url 'edit_comment' comment.id %}"
+                    id="edit-form-{{ comment.id }}"
+                    class="yt-edit-form"
+                    style="display:none;">
+                {% csrf_token %}
+                <input type="text" name="text" value="{{ comment.text }}">
+                <button type="submit">Save</button>
+              </form>
+              {% endif %}
+        
+              <!-- Reply form -->
+              <form method="POST"
+                    action="{% url 'reply_comment' comment.id %}"
+                    id="reply-form-{{ comment.id }}"
+                    class="yt-reply-form"
+                    style="display:none;">
+                {% csrf_token %}
+                <input type="text" name="text" placeholder="Add a reply…">
+                <button type="submit">Reply</button>
+              </form>
+        
+              <!-- Replies toggle -->
+              {% if comment.replies.count %}
+              <button type="button"
+              class="yt-view-replies"
+              id="toggle-btn-{{ comment.id }}"
+              data-count="{{ comment.replies.count }}"
+              onclick="toggleReplies('{{ comment.id }}')">
+        View {{ comment.replies.count }} replies ▼
+      </button>
+      
+      
+              {% endif %}
+        
+              <!-- Replies -->
+              <div class="yt-replies" id="replies-{{ comment.id }}" style="display:none;">
+                {% for reply in comment.replies.all %}
+                <div class="yt-reply">
+        
+                  <div class="yt-avatar small">
+                    {{ reply.user.username|first|upper }}
+                  </div>
+        
+                  <div class="yt-body">
+                    <span class="yt-username">@{{ reply.user.username }}</span>
+                    <p>{{ reply.text }}</p>
+                  </div>
+        
+                </div>
+                {% endfor %}
+              </div>
+        
+            </div>
+          </div>
+          {% endif %}
+        {% endfor %}
+        
+        <!-- New Comment -->
+        <form method="POST" action="{% url 'add_comment' post.id %}" class="yt-new-comment">
+          {% csrf_token %}
+          <input type="text" name="comment" placeholder="Add a comment…" required>
+          <button type="submit">Send</button>
+        </form>
+        
+        </section>
+        
+
+
+      </div>
+    </article>
+    {% empty %}
+      <p>No posts yet.</p>
+    {% endfor %}
+  </section>
+
+</main>
+</div>
+
+
+<script>
+  function toggleReply(id) {
+      const f = document.getElementById(`reply-form-${id}`);
+      f.style.display = f.style.display === "block" ? "none" : "block";
+  }
+  
+  function toggleEdit(id) {
+      document.getElementById(`edit-form-${id}`).style.display = "block";
+      document.getElementById(`comment-text-${id}`).style.display = "none";
+  }
+  
+  function toggleReplies(id) {
+      const replies = document.getElementById(`replies-${id}`);
+      const btn = document.getElementById(`toggle-btn-${id}`);
+  
+      if (!replies || !btn) return;
+  
+      const count = btn.getAttribute("data-count");
+  
+      if (replies.style.display === "none" || replies.style.display === "") {
+          replies.style.display = "block";
+          btn.innerText = "Hide replies ▲";
+      } else {
+          replies.style.display = "none";
+          btn.innerText = `View ${count} replies ▼`;
+      }
+  }
+  </script>
+  
+
+{% endblock %}
+
+ 
+
+

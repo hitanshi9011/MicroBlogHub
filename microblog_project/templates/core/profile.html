@@ -1,0 +1,1059 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Profile | {{ profile_user.username }}{% endblock %}
+
+{% block content %}
+
+<div class="profile-container">
+    <!-- Profile Cover & Header -->
+    <div class="profile-cover-section">
+        <div class="profile-cover">
+            <div class="cover-gradient"></div>
+            <div class="cover-pattern"></div>
+        </div>
+        
+        <div class="profile-header-wrapper">
+            <div class="profile-header-card">
+                <div class="profile-avatar-container">
+                    <div class="profile-avatar-large">
+                        {{ profile_user.username|first|upper }}
+                    </div>
+                    <div class="avatar-ring"></div>
+                    {% if user.is_authenticated and user == profile_user %}
+                        <div class="avatar-badge">
+                            <span>You</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="profile-info">
+                    <div class="profile-name-section">
+                        <h1 class="profile-username">@{{ profile_user.username }}</h1>
+                        {% if user.is_authenticated and user == profile_user %}
+                            <span class="profile-badge verified">✓ Verified</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="profile-bio">
+                        <p>Welcome to my profile! 🚀</p>
+                    </div>
+                    
+                    <div class="profile-stats">
+                        <div class="stat-item" data-stat="posts">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-content">
+                                <div class="stat-number" data-count="{{ posts.count }}">{{ posts.count }}</div>
+                                <div class="stat-label">Posts</div>
+                            </div>
+                        </div>
+                        <div class="stat-item" data-stat="followers">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-content">
+                                <div class="stat-number" data-count="{{ followers_count }}">{{ followers_count }}</div>
+                                <div class="stat-label">Followers</div>
+                            </div>
+                        </div>
+                        <div class="stat-item" data-stat="following">
+                            <div class="stat-icon">🔗</div>
+                            <div class="stat-content">
+                                <div class="stat-number" data-count="{{ following_count }}">{{ following_count }}</div>
+                                <div class="stat-label">Following</div>
+                            </div>
+                        </div>
+                    </div>
+
+{% if user.is_authenticated and user != profile_user %}
+                        <div class="profile-actions">
+  {% if is_following %}
+                                <a href="{% url 'unfollow' profile_user.id %}" class="btn-follow btn-unfollow">
+                                    <span class="btn-icon">✓</span>
+                                    <span>Following</span>
+                                </a>
+  {% else %}
+                                <a href="{% url 'follow' profile_user.id %}" class="btn-follow">
+                                    <span class="btn-icon">+</span>
+                                    <span>Follow</span>
+                                </a>
+  {% endif %}
+                            <a href="{% url 'conversation' profile_user.username %}" class="btn-secondary">
+                                <span class="btn-icon">💬</span>
+                                <span>Message</span>
+                            </a>
+                        </div>
+                    {% elif user.is_authenticated and user == profile_user %}
+                        <div class="profile-actions">
+                            <button class="btn-secondary" onclick="editProfile()">
+                                <span class="btn-icon">✏️</span>
+                                <span>Edit Profile</span>
+                            </button>
+                        </div>
+{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Posts Section -->
+    <div class="profile-posts-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <span class="section-icon">📝</span>
+                <span>Posts</span>
+                <span class="post-count-badge">{{ posts.count }}</span>
+            </h2>
+            <div class="section-filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="recent">Recent</button>
+                <button class="filter-btn" data-filter="popular">Popular</button>
+            </div>
+        </div>
+
+        {% if posts %}
+            <div class="profile-posts-list">
+                {% for post in posts %}
+                    <article class="profile-post-card" data-post-id="{{ post.id }}">
+                        <div class="post-card-header">
+                            <div class="post-header-left">
+                                <div class="post-card-avatar">
+                                    {{ profile_user.username|first|upper }}
+                                </div>
+                                <div class="post-card-meta">
+                                    <a href="{% url 'profile' profile_user.username %}" class="post-card-author">
+                                        @{{ profile_user.username }}
+                                    </a>
+                                    <div class="post-card-time">
+                                        <span class="time-icon">🕐</span>
+                                        <span>{{ post.created_at|timesince }} ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="post-header-actions">
+                                <button class="post-action-btn" data-post-id="{{ post.id }}" onclick="sharePost(this.dataset.postId)" title="Share">
+                                    <span>🔗</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="post-card-body">
+    <p>{{ post.content }}</p>
+                        </div>
+
+                        <div class="post-card-footer">
+                            <div class="post-engagement">
+                                <div class="engagement-item like-item" data-likes="{{ post.like_set.count }}">
+                                    <span class="engagement-icon">❤️</span>
+                                    <span class="engagement-count">{{ post.like_set.count }}</span>
+                                </div>
+                                <div class="engagement-item comment-item">
+                                    onclick="MicroBolgHub.toggleProfileComments({{ post.id }})">
+                                    <span class="engagement-icon">💬</span>
+                                    <span class="engagement-count">{{ post.comment_set.count }}</span>
+                                </div>
+                               
+
+</div>
+
+                                <div class="engagement-item share-item">
+                                    <span class="engagement-icon">🔗</span>
+                                    <span class="engagement-count">Share</span>
+                                </div>
+                            </div>
+  </div>
+  <!-- PROFILE COMMENTS SECTION -->
+<div class="profile-comments-section"
+id="profile-comments-{{ post.id }}"
+style="display: none; margin-top: 1rem;">
+
+{% if post.comment_set.count > 0 %}
+{% for comment in post.comment_set.all %}
+ <div class="comment-item" style="margin-bottom: 0.75rem;">
+   <div class="comment-avatar">
+     {{ comment.user.username|first|upper }}
+   </div>
+   <div class="comment-content">
+     <strong>{{ comment.user.username }}</strong>
+     <span class="comment-time">
+       · {{ comment.created_at|timesince }} ago
+     </span>
+     <div class="comment-text">{{ comment.text }}</div>
+   </div>
+ </div>
+{% endfor %}
+{% else %}
+<p style="color: var(--text-soft); font-size: 0.9rem;">
+ No comments yet
+</p>
+{% endif %}
+
+{% if user.is_authenticated %}
+<form method="SENT"
+   action="{% url 'add_comment' post.id %}"
+   style="margin-top: 0.75rem;">
+{% csrf_token %}
+<input type="text"
+      name="comment"
+      placeholder="Write a comment..."
+      required
+      style="width: 100%; padding: 0.6rem; border-radius: 10px;">
+</form>
+{% endif %}
+</div>
+
+                    </article>
+{% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-animation">
+                    <div class="empty-icon">📭</div>
+                    <div class="empty-particles">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                <h3>No posts yet</h3>
+                <p>This user hasn't shared anything yet. Check back later!</p>
+                {% if user.is_authenticated and user == profile_user %}
+                    <a href="{% url 'home' %}" class="empty-action-btn">
+                        <span>Create Your First Post</span>
+                        <span>→</span>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .profile-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    /* Profile Cover Section */
+    .profile-cover-section {
+        position: relative;
+        margin-bottom: 120px;
+    }
+
+    .profile-cover {
+        height: 200px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        border-radius: 0 0 24px 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .cover-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.3) 100%);
+    }
+
+    .cover-pattern {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        opacity: 0.5;
+    }
+
+    .profile-header-wrapper {
+        position: absolute;
+        bottom: -80px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 900px;
+        padding: 0 1rem;
+    }
+
+    .profile-header-card {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 2rem 2.5rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.6s ease-out;
+        backdrop-filter: blur(10px);
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .profile-avatar-container {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-avatar-large {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f46e5, #22c55e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        font-weight: 700;
+        box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
+        border: 5px solid var(--bg);
+        position: relative;
+        z-index: 2;
+        transition: all 0.3s ease;
+    }
+
+    .profile-avatar-large:hover {
+        transform: scale(1.05);
+        box-shadow: 0 15px 40px rgba(79, 70, 229, 0.5);
+    }
+
+    .avatar-ring {
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        right: -8px;
+        bottom: -8px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f46e5, #22c55e, #ec4899);
+        opacity: 0.3;
+        animation: rotate 3s linear infinite;
+        z-index: 1;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .avatar-badge {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, #4f46e5, #22c55e);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        z-index: 3;
+    }
+
+    .profile-info {
+        text-align: center;
+    }
+
+    .profile-name-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .profile-username {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: var(--text);
+        margin: 0;
+        background: linear-gradient(135deg, #4f46e5, #22c55e);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .profile-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        background: rgba(79, 70, 229, 0.15);
+        color: var(--accent);
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid var(--accent);
+    }
+
+    .profile-bio {
+        margin-bottom: 1.5rem;
+        color: var(--text-soft);
+        font-size: 1rem;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .profile-stats {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 2rem 0;
+        border-top: 1px solid var(--border);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        background: rgba(15, 23, 42, 0.5);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-width: 120px;
+        justify-content: center;
+    }
+
+    .stat-item:hover {
+        background: rgba(79, 70, 229, 0.1);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+
+    .stat-icon {
+        font-size: 1.5rem;
+    }
+
+    .stat-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stat-number {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--accent);
+        line-height: 1;
+        margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--text-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 500;
+    }
+
+    .profile-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-follow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 2rem;
+        background: linear-gradient(135deg, #4f46e5, #22c55e);
+        color: white;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+
+    .btn-follow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+        text-decoration: none;
+    }
+
+    .btn-unfollow {
+        background: rgba(148, 163, 184, 0.2);
+        color: var(--text);
+    }
+
+    .btn-unfollow:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+        box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.875rem 2rem;
+        background: rgba(148, 163, 184, 0.1);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-size: 0.95rem;
+        font-family: inherit;
+    }
+
+    .btn-secondary:hover {
+        background: rgba(148, 163, 184, 0.2);
+        border-color: var(--accent);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-icon {
+        font-size: 1rem;
+    }
+
+    /* Posts Section */
+    .profile-posts-section {
+        padding: 0 1rem 2rem;
+        animation: fadeIn 0.6s ease-out 0.3s both;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 0;
+    }
+
+    .section-icon {
+        font-size: 2rem;
+    }
+
+    .post-count-badge {
+        background: var(--accent-soft);
+        color: var(--accent);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .section-filters {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1.25rem;
+        background: rgba(148, 163, 184, 0.1);
+        color: var(--text-soft);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .filter-btn:hover {
+        background: rgba(148, 163, 184, 0.2);
+        color: var(--text);
+    }
+
+    .filter-btn.active {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+
+    .profile-posts-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .profile-post-card {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.75rem;
+        transition: all 0.3s ease;
+        animation: fadeInPost 0.4s ease-out;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-post-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #4f46e5, #22c55e);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .profile-post-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        border-color: var(--accent);
+    }
+
+    .profile-post-card:hover::before {
+        opacity: 1;
+    }
+
+    @keyframes fadeInPost {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .post-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+    }
+
+    .post-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .post-card-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4f46e5, #22c55e);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .post-card-meta {
+        flex: 1;
+    }
+
+    .post-card-author {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 1rem;
+        text-decoration: none;
+        display: block;
+        margin-bottom: 0.25rem;
+        transition: color 0.3s ease;
+    }
+
+    .post-card-author:hover {
+        color: var(--accent);
+    }
+
+    .post-card-time {
+        font-size: 0.85rem;
+        color: var(--text-soft);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .time-icon {
+        font-size: 0.75rem;
+    }
+
+    .post-header-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .post-action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgba(148, 163, 184, 0.1);
+        color: var(--text-soft);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .post-action-btn:hover {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border-color: var(--accent);
+        transform: scale(1.1);
+    }
+
+    .post-card-body {
+        margin-bottom: 1.25rem;
+    }
+
+    .post-card-body p {
+        color: var(--text);
+        font-size: 1.05rem;
+        line-height: 1.7;
+        margin: 0;
+        word-wrap: break-word;
+    }
+
+    .post-card-footer {
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .post-engagement {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+    }
+
+    .engagement-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: var (--text-soft);
+        cursor: pointer;
+        padding: 0.5rem 0.75rem;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .engagement-item:hover {
+        background: rgba(79, 70, 229, 0.1);
+        color: var(--accent);
+        transform: scale(1.05);
+    }
+
+    .engagement-icon {
+        font-size: 1.1rem;
+    }
+
+    .engagement-count {
+        font-weight: 500;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 5rem 2rem;
+        background: var(--bg-elevated);
+        border: 2px dashed var(--border);
+        border-radius: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .empty-state::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(79, 70, 229, 0.05) 0%, transparent 70%);
+        animation: pulse 3s ease-in-out infinite;
+    }
+
+    .empty-animation {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .empty-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.6;
+        display: inline-block;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-20px); }
+    }
+
+    .empty-particles {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .empty-particles span {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: var(--accent);
+        border-radius: 50%;
+        opacity: 0.3;
+        animation: particle 2s ease-in-out infinite;
+    }
+
+    .empty-particles span:nth-child(1) {
+        top: -30px;
+        left: -30px;
+        animation-delay: 0s;
+    }
+
+    .empty-particles span:nth-child(2) {
+        top: -30px;
+        right: -30px;
+        animation-delay: 0.5s;
+    }
+
+    .empty-particles span:nth-child(3) {
+        bottom: -30px;
+        left: 0;
+        animation-delay: 1s;
+    }
+
+    @keyframes particle {
+        0%, 100% {
+            transform: scale(1);
+            opacity: 0.3;
+        }
+        50% {
+            transform: scale(1.5);
+            opacity: 0.6;
+        }
+    }
+
+    .empty-state h3 {
+        font-size: 1.75rem;
+        color: var(--text);
+        margin-bottom: 0.75rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .empty-state p {
+        color: var(--text-soft);
+        font-size: 1.05rem;
+        margin-bottom: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .empty-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #4f46e5, #22c55e);
+        color: white;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .empty-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+        text-decoration: none;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .profile-cover {
+            height: 150px;
+        }
+
+        .profile-header-wrapper {
+            bottom: -60px;
+        }
+
+        .profile-header-card {
+            padding: 1.5rem 1.5rem;
+        }
+
+        .profile-avatar-large {
+            width: 100px;
+            height: 100px;
+            font-size: 2.5rem;
+        }
+
+        .profile-username {
+            font-size: 1.75rem;
+        }
+
+        .profile-stats {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            width: 100%;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+        }
+
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .section-filters {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .filter-btn {
+            flex: 1;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .profile-cover {
+            height: 120px;
+        }
+
+        .profile-header-wrapper {
+            bottom: -50px;
+        }
+
+        .profile-avatar-large {
+            width: 80px;
+            height: 80px;
+            font-size: 2rem;
+        }
+
+        .profile-actions {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-follow,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<script>
+
+function editProfile() {
+    if (window.MicroBlogHub && window.MicroBlogHub.showToast) {
+        window.MicroBlogHub.showToast('Edit profile feature coming soon!', 'info');
+    } else {
+        alert('Edit profile feature coming soon!');
+    }
+}
+
+function sharePost(postId) {
+    const postIdNum = typeof postId === 'string' ? parseInt(postId, 10) : postId;
+    if (navigator.share) {
+        navigator.share({
+            title: 'Check out this post!',
+            text: 'View this post on MicroBlogHub',
+            url: window.location.href + '#post-' + postIdNum
+        }).catch(() => {});
+    } else {
+        const url = window.location.href + '#post-' + postIdNum;
+        navigator.clipboard.writeText(url).then(() => {
+            if (window.MicroBlogHub && window.MicroBlogHub.showToast) {
+                window.MicroBlogHub.showToast('Link copied to clipboard!', 'success');
+            }
+        });
+    }
+}
+
+// Filter functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            // Add filter logic here if needed
+        });
+    });
+
+    // Animate stat numbers
+    const statNumbers = document.querySelectorAll('.stat-number');
+    const observerOptions = {
+        threshold: 0.5
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const target = entry.target;
+                const finalValue = parseInt(target.dataset.count);
+                animateNumber(target, 0, finalValue, 1000);
+                observer.unobserve(target);
+            }
+        });
+    }, observerOptions);
+
+    statNumbers.forEach(stat => observer.observe(stat));
+
+    function animateNumber(element, start, end, duration) {
+        const startTime = performance.now();
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const current = Math.floor(start + (end - start) * progress);
+            element.textContent = current;
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        requestAnimationFrame(update);
+    }
+});
+</script>
+{% endblock %}
