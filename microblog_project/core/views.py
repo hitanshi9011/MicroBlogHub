@@ -1,37 +1,34 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.shortcuts import render, redirect
 from django.http import JsonResponse
-from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
-from django.http import JsonResponse
-from django.db import IntegrityError, transaction
-from django.contrib.auth import get_user_model
-from .models import Notification
-from django.template.loader import render_to_string
-from .models import CommentLike
 from django.db.models import Q, Count
-from .models import Post, Follow
-from django.shortcuts import redirect, get_object_or_404
-from .models import Like
-from .models import Comment
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
+from django.db import transaction, IntegrityError
+from django.template.loader import render_to_string
+from django.contrib.auth import get_user_model
+from collections import Counter
+import re
 
 from .models import (
     Post,
     Follow,
     Like,
     Comment,
+    CommentLike,
     Message,
     Notification,
+    Community,
+    CommunityPost,
+    CommunityComment,
 )
 
 User = get_user_model()
+
 def home(request):
-    # Toggle include_communities session flag when requested
+    # =========================
+    # TOGGLE COMMUNITY POSTS
+    # =========================
     if request.GET.get('toggle_communities') is not None:
         current = request.session.get('include_communities', False)
         request.session['include_communities'] = not current
@@ -39,95 +36,149 @@ def home(request):
 
     include_communities = request.session.get('include_communities', False)
 
-    if request.user.is_authenticated:
-        # Users that the current user follows
-        following_ids = Follow.objects.filter(
-            follower=request.user
-        ).values_list('following_id', flat=True)
+    # =========================
+    # DEFAULT CONTEXT
+    # =========================
+    posts = []
+    users = []
+    following_ids = []
+    liked_posts = []
+    liked_comments = []
+    unread_notifications = []
+    unread_notifications_count = 0
 
-        # Show posts from followed users + self
+    # =========================
+    # AUTHENTICATED USER LOGIC
+    # =========================
+    if request.user.is_authenticated:
+        # Notifications
+        unread_notifications = Notification.objects.filter(
+            recipient=request.user,
+            is_read=False
+        ).order_by('-created_at')
+        unread_notifications_count = unread_notifications.count()
+
+        # Following
+        following_ids = list(
+            Follow.objects.filter(
+                follower=request.user
+            ).values_list('following_id', flat=True)
+        )
+
+        # Feed: followed users + self
         posts = Post.objects.filter(
-            user__in=list(following_ids) + [request.user.id],
+            user__in=following_ids + [request.user.id],
             status='published'
         ).select_related('user').annotate(
             like_count=Count('like', distinct=True),
             comment_count=Count('comment', distinct=True)
         ).order_by('-created_at')
 
-        # Limit people list to a reasonable number to improve render performance
+        # People section
         users = User.objects.exclude(id=request.user.id)[:20]
 
+        # Likes
+        liked_posts = list(
+            Like.objects.filter(user=request.user)
+            .values_list('post_id', flat=True)
+        )
+
+        # Comment likes
+        liked_comments = list(
+            CommentLike.objects.filter(user=request.user)
+            .values_list('comment_id', flat=True)
+        )
+
+    # =========================
+    # GUEST USER LOGIC
+    # =========================
     else:
-        posts = Post.objects.filter(status='published').select_related('user').annotate(
+        posts = Post.objects.filter(
+            status='published'
+        ).select_related('user').annotate(
             like_count=Count('like', distinct=True),
             comment_count=Count('comment', distinct=True)
         ).order_by('-created_at')
-        users = []
-        following_ids = []
 
-    # Compute trending hashtags and top liked posts (published posts only)
-    import re
-    from collections import Counter
+    # =========================
+    # TRENDING HASHTAGS
+    # =========================
+    recent_posts = Post.objects.filter(
+        status='published'
+    ).order_by('-created_at')[:500]
 
-    # Limit the scope for computing trending hashtags to recent posts (reduces scanning all historical posts)
-    all_posts = Post.objects.filter(status='published').order_by('-created_at')[:500]
     hashtag_counter = Counter()
-    for p in all_posts:
+    for p in recent_posts:
         tags = re.findall(r"#(\w+)", p.content)
         for t in tags:
             hashtag_counter[t.lower()] += 1
 
-    top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-    # Top liked posts
-    top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).select_related('user').order_by('-like_count', '-created_at')[:5]
-    # attach liked posts list for template
-    liked_posts = []
-    if request.user.is_authenticated:
-        liked_posts = Like.objects.filter(user=request.user).values_list('post_id', flat=True)
+    top_hashtags = [h for h, c in hashtag_counter.most_common(8)]
 
-    # Build unified feed (optionally include community posts)
+    # =========================
+    # TRENDING POSTS
+    # =========================
+    trending_posts = Post.objects.filter(
+        status='published'
+    ).annotate(
+        like_count=Count('like')
+    ).select_related('user').order_by(
+        '-like_count', '-created_at'
+    )[:5]
+
+    # =========================
+    # COMMUNITY POSTS (OPTIONAL)
+    # =========================
     posts_list = list(posts)
+
     if include_communities:
         from .models import CommunityPost
-        community_posts = CommunityPost.objects.select_related('user', 'community').prefetch_related('comments').order_by('-created_at')[:50]
-        # Normalize community posts to be compatible with template expectations
-        for cp in community_posts:
-            setattr(cp, 'is_community', True)
-            setattr(cp, 'community_obj', cp.community)
-            setattr(cp, 'like_count', 0)
-            # Provide comment_set similar API used for regular posts
-            setattr(cp, 'comment_set', cp.comments)
 
-        # Mark regular posts as non-community
+        community_posts = CommunityPost.objects.select_related(
+            'user', 'community'
+        ).prefetch_related(
+            'comments'
+        ).order_by('-created_at')[:50]
+
+        for cp in community_posts:
+            cp.is_community = True
+            cp.community_obj = cp.community
+            cp.like_count = 0
+            cp.comment_set = cp.comments
+
         for p in posts_list:
-            setattr(p, 'is_community', False)
+            p.is_community = False
 
         posts_list.extend(list(community_posts))
     else:
         for p in posts_list:
-            setattr(p, 'is_community', False)
+            p.is_community = False
 
-    # Merge and sort by creation time
     posts_list.sort(key=lambda x: x.created_at, reverse=True)
 
-    context = {
+    # =========================
+    # FINAL RENDER
+    # =========================
+    return render(request, 'home.html', {
         'posts': posts_list,
         'users': users,
         'following_ids': following_ids,
-        'trending_hashtags': top_hashtags,
-        'trending_posts': top_posts,
         'liked_posts': liked_posts,
+        'liked_comments': liked_comments,
+        'unread_notifications': unread_notifications,
+        'unread_notifications_count': unread_notifications_count,
+        'trending_hashtags': top_hashtags,
+        'trending_posts': trending_posts,
         'include_communities': include_communities,
-    }
-
-    return render(request, 'home.html', context)
+    })
 
 
+@login_required
 def profile(request, username):
     profile_user = get_object_or_404(User, username=username)
 
     # Show drafts only to the profile owner
-    if request.user.is_authenticated and request.user == profile_user:
+    if request.user == profile_user:
         posts_qs = Post.objects.filter(user=profile_user)
     else:
         posts_qs = Post.objects.filter(user=profile_user, status='published')
@@ -140,12 +191,10 @@ def profile(request, username):
     followers_count = Follow.objects.filter(following=profile_user).count()
     following_count = Follow.objects.filter(follower=profile_user).count()
 
-    is_following = False
-    if request.user.is_authenticated:
-        is_following = Follow.objects.filter(
-            follower=request.user,
-            following=profile_user
-        ).exists()
+    is_following = Follow.objects.filter(
+        follower=request.user,
+        following=profile_user
+    ).exists()
 
     context = {
         'profile_user': profile_user,
@@ -156,6 +205,7 @@ def profile(request, username):
     }
 
     return render(request, 'core/profile.html', context)
+
 
 # =========================
 # AUTH
@@ -317,67 +367,6 @@ def logout_view(request):
     return redirect('login')
 
 
-# =========================
-# HOME
-# =========================
-from core.models import Notification, Post
-
-from core.models import Notification, Post
-
-
-def home(request):
-    posts = Post.objects.all().order_by('-created_at')
-
-    unread_notifications = []
-    unread_notifications_count = 0
-    users = []
-    following_ids = []
-    liked_posts = []
-
-    if request.user.is_authenticated:
-        # Notifications
-        unread_notifications = Notification.objects.filter(
-            recipient=request.user,
-            is_read=False
-        ).order_by('-created_at')
-        unread_notifications_count = unread_notifications.count()
-
-        # People section
-        following_ids = list(
-            Follow.objects.filter(
-                follower=request.user
-            ).values_list('following_id', flat=True)
-        )
-
-        users = User.objects.exclude(id=request.user.id)[:20]
-
-        # Likes
-        liked_posts = list(
-            Like.objects.filter(
-                user=request.user
-            ).values_list('post_id', flat=True)
-        )
-        liked_comments = []
-
-        if request.user.is_authenticated:liked_comments = list(
-        CommentLike.objects.filter(user=request.user)
-        .values_list('comment_id', flat=True)
-    )
-
-
-    return render(request, 'home.html', {
-    'posts': posts,
-    'users': users,
-    'following_ids': following_ids,
-    'liked_posts': liked_posts,
-    'liked_comments': liked_comments,   # ✅ ADD THIS
-    'unread_notifications': unread_notifications,
-    'unread_notifications_count': unread_notifications_count,
-})
-
-
-
-
 @login_required
 def create_post(request):
     if request.method == "POST":
@@ -393,68 +382,23 @@ def create_post(request):
 
 # =========================
 # PROFILE
-# =========================
-
-@login_required
-def profile(request, username):
-    profile_user = get_object_or_404(User, username=username)
-
-    posts = Post.objects.filter(user=profile_user).order_by('-created_at')
-
-    followers_count = Follow.objects.filter(following=profile_user).count()
-    following_count = Follow.objects.filter(follower=profile_user).count()
-
-    is_following = Follow.objects.filter(
-        follower=request.user,
-        following=profile_user
-    ).exists()
-
-    return render(request, 'core/profile.html', {
-        'profile_user': profile_user,
-        'posts': posts,
-        'followers_count': followers_count,
-        'following_count': following_count,
-        'is_following': is_following,
-    })
+# ========================
 
 
 # =========================
 # FOLLOW / UNFOLLOW
 # =========================
 
-@login_required
-def follow_user(request, user_id):
-    target = get_object_or_404(User, id=user_id)
-    if request.method == 'POST':
-        content = request.POST.get('content', '').strip()
-        action = request.POST.get('action', 'publish')
-
-        if content == '':
-            # do not create empty posts
-            messages.error(request, 'Post content cannot be empty')
-            return redirect('home')
-
-        status = 'draft' if action == 'draft' else 'published'
-        Post.objects.create(
-            user=request.user,
-            content=content,
-            status=status
-        )
-
-        if status == 'draft':
-            messages.success(request, 'Saved draft')
-            return redirect('drafts')
-        else:
-            return redirect('home')
+from django.db import transaction, IntegrityError
 
 @login_required
 def follow_user(request, user_id):
-    # Only allow POST for follow action
+    # Only allow POST
     if request.method != 'POST':
-        messages.error(request, 'Invalid method')
+        messages.error(request, 'Invalid request method')
         return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-    user_to_follow = get_object_or_404(User, id=user_id)
+    target = get_object_or_404(User, id=user_id)
 
     if request.user == target:
         messages.error(request, "You cannot follow yourself.")
@@ -485,14 +429,7 @@ def follow_user(request, user_id):
 
     return redirect('profile', username=target.username)
 
-@login_required
-def unfollow_user(request, user_id):
-    target = get_object_or_404(User, id=user_id)
-    if request.user == target:
-        messages.error(request, "Invalid operation.")
-        return redirect('profile', username=target.username)
-    # Return to the page the user came from (profile page), fall back to home
-    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
 @login_required
 def unfollow_user(request, user_id):
     # Only allow POST for unfollow action
@@ -500,17 +437,24 @@ def unfollow_user(request, user_id):
         messages.error(request, 'Invalid method')
         return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-    user_to_unfollow = get_object_or_404(User, id=user_id)
+    target = get_object_or_404(User, id=user_id)
 
-    deleted, _ = Follow.objects.filter(follower=request.user, following=target).delete()
+    if request.user == target:
+        messages.error(request, "Invalid operation.")
+        return redirect('profile', username=target.username)
+
+    deleted, _ = Follow.objects.filter(
+        follower=request.user,
+        following=target
+    ).delete()
+
     if deleted:
         messages.success(request, f"You unfollowed @{target.username}.")
     else:
         messages.info(request, f"You were not following @{target.username}.")
-    return redirect('profile', username=target.username)
 
-    # Return to the referring page so unfollow keeps user on the profile
-    return redirect(request.META.get('HTTP_REFERER', 'home'))
+    # Stay on profile page
+    return redirect('profile', username=target.username)
 
 # =========================
 # LIKE / UNLIKE
@@ -778,13 +722,6 @@ def notification_redirect(request, id):
     notification.save()
 
     return redirect(notification.get_redirect_url())
-
-
-
-
-
-
-
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
