@@ -1,17 +1,3 @@
-<<<<<<< HEAD
-<h2>Your Drafts</h2>
-
-{% for post in drafts %}
-  <div class="post draft">
-    <p>{{ post.content }}</p>
-
-    <a href="{% url 'publish_draft' post.id %}">Publish</a>
-    <a href="{% url 'delete_post' post.id %}">Delete</a>
-  </div>
-{% empty %}
-  <p>No drafts yet</p>
-{% endfor %}
-=======
 {% extends 'base.html' %}
 {% load static %}
 
@@ -46,4 +32,3 @@
   <script src="{% static 'js/drafts.js' %}"></script>
 </div>
 {% endblock %}
->>>>>>> sub-branch2

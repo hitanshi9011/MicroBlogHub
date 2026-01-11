@@ -129,22 +129,6 @@ button:active {
 
 /* Post Styling */
 .post {
-<<<<<<< HEAD
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-    padding: 1.5rem 0;
-    transition: all 0.3s ease;
-    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
-    border-radius: 12px;
-    padding: 1rem;
-}
-
-.post:hover {
-    background: rgba(15, 23, 42, 0.42);
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-}
-
-=======
     border: 1px solid rgba(148, 163, 184, 0.06);
     padding: 1.25rem;
     transition: transform 220ms var(--ease-fast), box-shadow 220ms var(--ease-fast);
@@ -225,7 +209,6 @@ button:active {
 .community-posts .post .post-main { flex:1; }
 
 
->>>>>>> sub-branch2
 /* Trending styles */
 .trending-section { margin-top: 1.5rem; }
 .hashtag-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
@@ -240,12 +223,7 @@ button:active {
 .hashtag-chip:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(79,70,229,0.08); }
 
 .trending-posts .tpost-row { display:flex; gap:0.6rem; align-items:flex-start; padding:0.5rem 0; }
-<<<<<<< HEAD
-.trending-posts .tpost-snippet { color:#cbd5e1; font-size:0.95rem; margin:0; }
-
-=======
 .trending-posts .tpost-snippet { color:#cbd5e1; font-size:0.95rem; margin:0; padding: 0.85rem; }
->>>>>>> sub-branch2
 /* Highlighted search matches */
 .mark-highlight { background: rgba(99,102,241,0.25); padding: 0.05rem 0.2rem; border-radius:4px; }
 
@@ -254,10 +232,7 @@ button:active {
 .nav-search-input { width:200px; padding:0.4rem 0.6rem; border-radius:999px; border:1px solid rgba(148,163,184,0.08); background: rgba(0,0,0,0.2); color:#e5e7eb; }
 .nav-search-btn { background:transparent; border:none; color:#cbd5e1; cursor:pointer; }
 
-<<<<<<< HEAD
-=======
     /* Communities styles removed during UI revert */
->>>>>>> sub-branch2
 @media (max-width: 768px) {
     .nav-search-input { width: 120px; }
     .hashtag-list { gap:0.4rem; }
@@ -325,8 +300,6 @@ a:hover {
 .sidebar, .right-sidebar { background: rgba(11,16,32,0.6); padding: 1rem; border-radius: 12px; border: 1px solid rgba(148,163,184,0.04); position: sticky; top: 88px; align-self: start; }
 .main { width: 100%; max-width: 840px; min-width: 0; }
 
-<<<<<<< HEAD
-=======
 
 .brand-text h1 { font-size: 1.05rem; margin: 0 0 0.15rem 0; }
 .brand-text p { margin: 0 0 0.6rem 0; color: var(--muted); font-size: 0.85rem; }
@@ -352,7 +325,6 @@ a:hover {
 .communities-box .communities-create { margin-top: 0.5rem; }
 .communities-toggle { margin-top: 0.25rem; }
 
->>>>>>> sub-branch2
 /* Prevent long words from causing horizontal overflow */
 .post-body, .tpost-snippet { overflow-wrap: anywhere; word-break: break-word; }
 
@@ -365,10 +337,6 @@ a:hover {
     .search-results-main { order: 1; }
 }
 
-<<<<<<< HEAD
-/* Strong override to force 3-column layout and ensure correct grid-areas */
-=======
->>>>>>> sub-branch2
 .main-content-wrapper .app-shell {
     display: grid !important;
     grid-template-columns: 260px minmax(0,1fr) 320px !important;
@@ -379,11 +347,7 @@ a:hover {
 .main-content-wrapper .app-shell > .main { grid-area: main !important; }
 .main-content-wrapper .app-shell > .right-sidebar { grid-area: trending !important; }
 
-<<<<<<< HEAD
-/* Subtle outline used only for visual verification - remove later */
-=======
 /* Remove debug outlines for production look */
->>>>>>> sub-branch2
 .sidebar, .main, .right-sidebar { outline: 1px solid rgba(79,70,229,0.04); }
 
 /* Modal styles (delete confirmation) */
@@ -395,8 +359,6 @@ a:hover {
 #deleteForm .btn-secondary { background: transparent; border: 1px solid rgba(148,163,184,0.08); color: var(--text); padding: 0.5rem 0.75rem; border-radius:8px; }
 #deleteForm .primary-btn { padding: 0.5rem 0.75rem; }
 
-<<<<<<< HEAD
-=======
 /* Drafts and small icon button styles */
 .icon-btn {
     display: inline-flex;
@@ -493,4 +455,3 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     border: 1px solid rgba(148,163,184,0.04);
 }
 
->>>>>>> sub-branch2
