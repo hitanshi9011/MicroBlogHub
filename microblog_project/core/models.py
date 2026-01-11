@@ -52,8 +52,7 @@ class Comment(models.Model):
         return f"{self.user.username} commented on post {self.post.id}"
 
 
-<<<<<<< HEAD
-=======
+
 # Community feature models
 class Community(models.Model):
     name = models.CharField(max_length=120, unique=True)
@@ -84,5 +83,3 @@ class CommunityComment(models.Model):
     def __str__(self):
         return f"{self.user.username} on {self.post.id} in {self.post.community.name}"
 
-
->>>>>>> sub-branch2

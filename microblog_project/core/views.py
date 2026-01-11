@@ -31,12 +31,8 @@ def home(request):
 
         # Show posts from followed users + self
         posts = Post.objects.filter(
-<<<<<<< HEAD
-            user__in=list(following_ids) + [request.user.id]
-=======
             user__in=list(following_ids) + [request.user.id],
             status='published'
->>>>>>> sub-branch2
         ).select_related('user').annotate(
             like_count=Count('like', distinct=True),
             comment_count=Count('comment', distinct=True)
@@ -46,31 +42,19 @@ def home(request):
         users = User.objects.exclude(id=request.user.id)[:20]
 
     else:
-<<<<<<< HEAD
-        posts = Post.objects.all().select_related('user').annotate(
-=======
         posts = Post.objects.filter(status='published').select_related('user').annotate(
->>>>>>> sub-branch2
             like_count=Count('like', distinct=True),
             comment_count=Count('comment', distinct=True)
         ).order_by('-created_at')
         users = []
         following_ids = []
 
-<<<<<<< HEAD
-    # Compute trending hashtags and top liked posts
-=======
     # Compute trending hashtags and top liked posts (published posts only)
->>>>>>> sub-branch2
     import re
     from collections import Counter
 
     # Limit the scope for computing trending hashtags to recent posts (reduces scanning all historical posts)
-<<<<<<< HEAD
-    all_posts = Post.objects.order_by('-created_at')[:500]
-=======
     all_posts = Post.objects.filter(status='published').order_by('-created_at')[:500]
->>>>>>> sub-branch2
     hashtag_counter = Counter()
     for p in all_posts:
         tags = re.findall(r"#(\w+)", p.content)
@@ -79,22 +63,8 @@ def home(request):
 
     top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
     # Top liked posts
-<<<<<<< HEAD
-    top_posts = Post.objects.annotate(like_count=Count('like')).select_related('user').order_by('-like_count', '-created_at')[:5]
-
-    context = {
-        'posts': posts,
-        'users': users,
-        'following_ids': following_ids,
-        'trending_hashtags': top_hashtags,
-        'trending_posts': top_posts,
-    }
-    
-    return render(request, 'home.html', context)
-=======
     top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).select_related('user').order_by('-like_count', '-created_at')[:5]
     # attach liked posts list for template
->>>>>>> sub-branch2
     liked_posts = []
     if request.user.is_authenticated:
         liked_posts = Like.objects.filter(user=request.user).values_list('post_id', flat=True)
@@ -140,9 +110,6 @@ def home(request):
 def profile(request, username):
     profile_user = get_object_or_404(User, username=username)
 
-<<<<<<< HEAD
-    posts = Post.objects.filter(user=profile_user).select_related('user').annotate(
-=======
     # Show drafts only to the profile owner
     if request.user.is_authenticated and request.user == profile_user:
         posts_qs = Post.objects.filter(user=profile_user)
@@ -150,7 +117,6 @@ def profile(request, username):
         posts_qs = Post.objects.filter(user=profile_user, status='published')
 
     posts = posts_qs.select_related('user').annotate(
->>>>>>> sub-branch2
         like_count=Count('like', distinct=True),
         comment_count=Count('comment', distinct=True)
     ).order_by('-created_at')
@@ -182,13 +148,10 @@ def post_detail(request, post_id):
         comment_count=Count('comment', distinct=True)
     ), id=post_id)
 
-<<<<<<< HEAD
-=======
     # Prevent others from viewing drafts
     if post.status == 'draft' and (not request.user.is_authenticated or request.user != post.user):
         return redirect('home')
 
->>>>>>> sub-branch2
     liked = False
     if request.user.is_authenticated:
         liked = Like.objects.filter(user=request.user, post=post).exists()
@@ -198,22 +161,14 @@ def post_detail(request, post_id):
     # compute trending hashtags and top posts for sidebar
     import re
     from collections import Counter
-<<<<<<< HEAD
-    all_posts = Post.objects.order_by('-created_at')[:500]
-=======
     all_posts = Post.objects.filter(status='published').order_by('-created_at')[:500]
->>>>>>> sub-branch2
     hashtag_counter = Counter()
     for p in all_posts:
         tags = re.findall(r"#(\w+)", p.content)
         for t in tags:
             hashtag_counter[t.lower()] += 1
     top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-<<<<<<< HEAD
-    top_posts = Post.objects.annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
-=======
     top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
->>>>>>> sub-branch2
 
     context = {
         'post': post,
@@ -263,12 +218,8 @@ def search(request):
         users = User.objects.filter(username__icontains=q)
 
     # annotate and select_related for better performance (avoid N+1 queries in templates)
-<<<<<<< HEAD
-    posts = posts.select_related('user').annotate(
-=======
     # Only show published posts in search results
     posts = posts.filter(status='published').select_related('user').annotate(
->>>>>>> sub-branch2
         like_count=Count('like', distinct=True),
         comment_count=Count('comment', distinct=True)
     )
@@ -286,22 +237,15 @@ def search(request):
         p.tags = re.findall(r"#(\w+)", p.content)
 
     # compute trending hashtags and top posts for sidebar
-<<<<<<< HEAD
     all_posts = Post.objects.all()
-=======
     all_posts = Post.objects.filter(status='published')
->>>>>>> sub-branch2
     hashtag_counter = Counter()
     for p in all_posts:
         tags = re.findall(r"#(\w+)", p.content)
         for t in tags:
             hashtag_counter[t.lower()] += 1
     top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-<<<<<<< HEAD
-    top_posts = Post.objects.annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
-=======
     top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
->>>>>>> sub-branch2
 
     context = {
         'posts': posts,
@@ -477,12 +421,6 @@ def delete_post(request, post_id):
     # Delete only via POST to avoid accidental deletes
     if request.method == 'POST':
         post.delete()
-<<<<<<< HEAD
-        messages.success(request, 'Post deleted')
-        return redirect('home')
-
-    return render(request, 'confirm_delete.html', {'post': post})
-=======
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({'status': 'ok', 'message': 'Post deleted', 'post_id': post_id})
         messages.success(request, 'Post deleted')
@@ -723,4 +661,3 @@ def delete_community(request, community_id):
         return redirect('community_list')
 
     return render(request, 'confirm_delete_community.html', {'community': community})
->>>>>>> sub-branch2

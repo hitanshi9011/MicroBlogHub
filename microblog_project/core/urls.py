@@ -16,11 +16,6 @@ urlpatterns = [
     path('post/<int:post_id>/edit/', views.edit_post, name='edit_post'),
     path('post/<int:post_id>/delete/', views.delete_post, name='delete_post'),
 
-    # Edit and delete posts
-    path('post/<int:post_id>/', views.post_detail, name='post_detail'),
-    path('post/<int:post_id>/edit/', views.edit_post, name='edit_post'),
-    path('post/<int:post_id>/delete/', views.delete_post, name='delete_post'),
-
     # ✅ FOLLOW / UNFOLLOW URLS (THIS IS THE FIX)
     path('follow/<int:user_id>/', views.follow_user, name='follow'),
     path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow'),
@@ -30,8 +25,6 @@ urlpatterns = [
     path('comment/<int:post_id>/', views.add_comment, name='add_comment'),
     path('profile/<str:username>/', views.profile, name='profile'),
     path('search/', views.search, name='search'),
-<<<<<<< HEAD
-=======
 
     # Community URLs
     path('communities/', views.community_list, name='community_list'),
@@ -41,7 +34,6 @@ urlpatterns = [
     path('communities/<int:community_id>/post/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
     path('communities/<int:community_id>/comment/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
     path('communities/<int:community_id>/delete/', views.delete_community, name='delete_community'),
->>>>>>> sub-branch2
 
 
 
