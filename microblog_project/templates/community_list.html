@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Communities | MicroBlogHub{% endblock %}
+
+{% block content %}
+<section class="container full-width community-listing">
+  <h1>Communities</h1>
+  <p>Explore communities and join the conversation.</p>
+
+      {% if request.user.is_authenticated %}
+        <p><a class="primary-btn" href="{% url 'create_community' %}">Create community</a></p>
+      {% else %}
+        <p><a href="{% url 'login' %}">Log in</a> to create a community.</p>
+      {% endif %}
+
+      <ul class="community-list">
+        {% for c in communities %}
+          <li class="community-item post">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+              <div>
+                <a href="{% url 'community_detail' c.id %}"><strong>{{ c.name }}</strong></a>
+                <p>{{ c.description|default:"No description" }}</p>
+                <small>Created by: {% if c.created_by %}{{ c.created_by.username }}{% else %}system{% endif %}</small>
+              </div>
+              <div>
+                {% if request.user.is_authenticated and c.created_by and request.user == c.created_by %}
+                  <form method="POST" action="{% url 'delete_community' c.id %}" style="display:inline;" onsubmit="return confirm('Delete this community?');">
+                    {% csrf_token %}
+                    <button type="submit" class="icon-btn" title="Delete community">🗑️</button>
+                  </form>
+                {% endif %}
+              </div>
+            </div>
+          </li>
+        {% empty %}
+          <li>No communities yet.</li>
+        {% endfor %}
+      </ul>
+  </section>
+
+{% endblock %}

@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Search Results | MicroBlogHub{% endblock %}
+
+{% block content %}
+
+<div class="search-results-shell">
+  <section class="search-header">
+    <h2>Search results</h2>
+    <p>Query: <strong>{{ query }}</strong> {% if match_type != 'none' and match_type != 'empty' %} — {{ match_type|capfirst }}{% endif %}</p>
+    <a href="{% url 'home' %}">&larr; Back to home</a>
+  </section>
+
+  <section class="search-main-grid">
+    <main class="search-results-main" data-query="{{ query }}">
+
+  {% if users and users.exists %}
+    <section class="users-results">
+      <h3>Users</h3>
+      {% for u in users %}
+        <div class="person-row">
+          <div class="avatar">{{ u.username|first|upper }}</div>
+          <div class="person-main">
+            <a href="{% url 'profile' u.username %}"><strong>{{ u.username }}</strong></a>
+          </div>
+        </div>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  {% if posts and posts.exists %}
+    <section class="posts-list">
+      {% for post in posts %}
+      <article class="post">
+
+        <div class="avatar">
+          {{ post.user.username|first|upper }}
+        </div>
+
+        <div class="post-main">
+
+          <header class="post-header">
+            <div>
+              <a href="{% url 'profile' post.user.username %}">
+                <span class="post-author-name">{{ post.user.username }}</span>
+              </a>
+              <span class="post-dot">·</span>
+              <span class="post-time">{{ post.created_at|timesince }} ago</span>
+            </div>
+          </header>
+
+          <p class="post-body">{{ post.content }}</p>
+
+          <div class="post-tags">
+            {% for tag in post.tags %}
+              <a class="hashtag-chip" href="{% url 'search' %}?q=%23{{ tag }}">#{{ tag }}</a>
+            {% endfor %}
+          </div>
+
+          <footer class="post-footer">
+            <div class="post-actions">
+              <div class="like-section">
+                {% if post.id in liked_posts %}
+                  <a href="{% url 'unlike' post.id %}" class="action-btn liked">
+                    <span class="action-icon">❤️</span>
+                    <span class="action-count">{{ post.like_count }}</span>
+                  </a>
+                {% else %}
+                  <a href="{% url 'like' post.id %}" class="action-btn">
+                    <span class="action-icon">🤍</span>
+                    <span class="action-count">{{ post.like_count }}</span>
+                  </a>
+                {% endif %}
+              </div>
+              <div class="comment-toggle">
+                <button type="button" class="action-btn comment-btn" onclick="toggleComments(this)" aria-label="Toggle comments">
+                  <span class="action-icon">💬</span>
+                  <span class="action-count">{{ post.comment_count }}</span>
+                </button>
+              </div>
+
+              {% if request.user.is_authenticated and request.user == post.user %}
+                <div class="post-owner-actions">
+                  <a href="{% url 'edit_post' post.id %}" class="action-btn" title="Edit">✏️</a>
+                  <button type="button" class="action-btn delete-btn" data-delete-url="{% url 'delete_post' post.id %}" data-post-content="{{ post.content|escapejs }}" title="Delete">🗑️</button>
+                </div>
+              {% endif %}
+
+            </div>
+          </footer>
+
+          <!-- COMMENTS (kept collapsed on search results) -->
+
+        </div>
+      </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  {% if not users and not posts %}
+    <p>No results found for <strong>{{ query }}</strong>.</p>
+  {% endif %}
+
+    </main>
+
+    <aside class="search-sidebar">
+      <section class="trending-section">
+        <h4>Trending</h4>
+        <div class="hashtag-list">
+          {% for tag in trending_hashtags %}
+            <a href="{% url 'search' %}?q=%23{{ tag }}" class="hashtag-chip">#{{ tag }}</a>
+          {% empty %}
+            <p>No tags</p>
+          {% endfor %}
+        </div>
+
+        <h4>Top posts</h4>
+        <div class="trending-posts">
+          {% for tpost in trending_posts %}
+            <div class="tpost-row">
+              <div class="avatar">{{ tpost.user.username|first|upper }}</div>
+              <div class="tpost-main">
+                <a href="{% url 'profile' tpost.user.username %}"><strong>{{ tpost.user.username }}</strong></a>
+                <a href="{% url 'post_detail' tpost.id %}" class="tpost-link"><p class="tpost-snippet">{{ tpost.content|truncatechars:60 }}</p></a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+    </aside>
+  </section>
+</div>
+
+{% endblock %}

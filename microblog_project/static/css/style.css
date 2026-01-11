@@ -15,18 +15,21 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Selection Styling */
-::selection {
-    background: rgba(79, 70, 229, 0.3);
-    color: #e5e7eb;
+/* Brand color tokens and easing */
+:root {
+    --bg-0: #071026;
+    --bg-1: #0b1020;
+    --text-1: #e5e7eb;
+    --muted: #9ca3af;
+    --primary-start: #4f46e5;
+    --primary-mid: #6366f1;
+    --primary-end: #22c55e;
+    --accent: #6366f1;
+    --ease-fast: cubic-bezier(.2,.9,.3,1);
 }
 
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-}
-
+    /* Buttons */
+    button { cursor: pointer; font-family: inherit; }
 ::-webkit-scrollbar-track {
     background: rgba(15, 23, 42, 0.5);
     border-radius: 10px;
@@ -98,6 +101,23 @@ button {
     font-family: inherit;
 }
 
+/* Primary action button */
+.primary-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-mid) 50%, var(--primary-end) 100%);
+    color: var(--text-1);
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: transform 180ms var(--ease-fast), box-shadow 180ms var(--ease-fast);
+}
+.primary-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(79,70,229,0.18); }
+.primary-btn:active { transform: translateY(-1px); }
+
 button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
@@ -109,16 +129,113 @@ button:active {
 
 /* Post Styling */
 .post {
-    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-    padding: 1.5rem 0;
-    transition: all 0.3s ease;
+    border: 1px solid rgba(148, 163, 184, 0.06);
+    padding: 1.25rem;
+    transition: transform 220ms var(--ease-fast), box-shadow 220ms var(--ease-fast);
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    border-radius: 12px;
+    margin-bottom: 1rem;
 }
 
 .post:hover {
-    background: rgba(15, 23, 42, 0.3);
-    padding-left: 1rem;
-    padding-right: 1rem;
+    transform: translateY(-6px);
+    box-shadow: 0 18px 40px rgba(2,6,23,0.6);
+}
+
+/* Composer (new post box) */
+.composer-card {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
     border-radius: 12px;
+    border: 1px solid rgba(148,163,184,0.06);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.composer-card .avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #6366f1, #22c55e);
+    flex-shrink: 0;
+}
+.composer-main { flex: 1; display: flex; flex-direction: column; gap: 0.6rem; }
+.composer-main textarea {
+    width: 100%;
+    min-height: 84px;
+    padding: 0.9rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(148,163,184,0.04);
+    background: rgba(11,16,32,0.6);
+    color: var(--text-1);
+    resize: vertical;
+    font-family: inherit;
+}
+.composer-footer { display:flex; align-items:center; justify-content:space-between; gap:0.75rem; }
+.composer-footer #charCount { color: var(--muted); font-size: 0.9rem; }
+.composer-actions { display:flex; align-items:center; gap:0.5rem; }
+.composer-actions .primary-btn { padding: 0.5rem 0.9rem; font-size: 0.95rem; }
+.composer-actions .icon-btn { min-width:38px; height:38px; }
+
+/* Generic avatar used across posts, trending and composer */
+.avatar {
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    color:#fff;
+    background: linear-gradient(135deg,#6366f1,#22c55e);
+    flex-shrink:0;
+}
+
+/* Form input utility used on community create */
+.text-input { width:100%; padding:0.75rem 0.9rem; border-radius:10px; border:1px solid rgba(148,163,184,0.06); background: rgba(11,16,32,0.6); color:var(--text-1); }
+
+/* Community listing/detail tweaks */
+.community-listing .community-item { padding: 0.9rem; border-radius: 10px; }
+.community-create .form-row { margin-bottom: 0.75rem; }
+.community-detail .communuty-desc { color: #cbd5e1; margin-bottom: 0.75rem; }
+
+.community-posts .post { display:flex; gap:0.9rem; align-items:flex-start; }
+.community-posts .post .post-main { flex:1; }
+
+
+/* Trending styles */
+.trending-section { margin-top: 1.5rem; }
+.hashtag-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
+.hashtag-chip {
+    background: rgba(79,70,229,0.08);
+    color: #e6e6ff;
+    padding: 0.35rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.hashtag-chip:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(79,70,229,0.08); }
+
+.trending-posts .tpost-row { display:flex; gap:0.6rem; align-items:flex-start; padding:0.5rem 0; }
+.trending-posts .tpost-snippet { color:#cbd5e1; font-size:0.95rem; margin:0; padding: 0.85rem; }
+/* Highlighted search matches */
+.mark-highlight { background: rgba(99,102,241,0.25); padding: 0.05rem 0.2rem; border-radius:4px; }
+
+/* Search input styles for base nav (fallback in style.css in case vibetext overrides) */
+.nav-search-form { display:flex; align-items:center; gap:0.4rem; }
+.nav-search-input { width:200px; padding:0.4rem 0.6rem; border-radius:999px; border:1px solid rgba(148,163,184,0.08); background: rgba(0,0,0,0.2); color:#e5e7eb; }
+.nav-search-btn { background:transparent; border:none; color:#cbd5e1; cursor:pointer; }
+
+    /* Communities styles removed during UI revert */
+@media (max-width: 768px) {
+    .nav-search-input { width: 120px; }
+    .hashtag-list { gap:0.4rem; }
 }
 
 /* Links */
@@ -128,11 +245,11 @@ a {
     transition: all 0.3s ease;
 }
 
+
 a:hover {
     color: #6366f1;
     text-decoration: underline;
 }
-
 /* Loading Animation */
 @keyframes shimmer {
     0% {

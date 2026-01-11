@@ -66,15 +66,21 @@
 {% if user.is_authenticated and user != profile_user %}
                         <div class="profile-actions">
   {% if is_following %}
-                                <a href="{% url 'unfollow' profile_user.id %}" class="btn-follow btn-unfollow">
-                                    <span class="btn-icon">✓</span>
-                                    <span>Following</span>
-                                </a>
+                                <form method="POST" action="{% url 'unfollow' profile_user.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-follow btn-unfollow">
+                                        <span class="btn-icon">✓</span>
+                                        <span>Following</span>
+                                    </button>
+                                </form>
   {% else %}
-                                <a href="{% url 'follow' profile_user.id %}" class="btn-follow">
-                                    <span class="btn-icon">+</span>
-                                    <span>Follow</span>
-                                </a>
+                                <form method="POST" action="{% url 'follow' profile_user.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-follow">
+                                        <span class="btn-icon">+</span>
+                                        <span>Follow</span>
+                                    </button>
+                                </form>
   {% endif %}
                             <a href="{% url 'conversation' profile_user.username %}" class="btn-secondary">
                                 <span class="btn-icon">💬</span>
@@ -132,23 +138,27 @@
                                 <button class="post-action-btn" data-post-id="{{ post.id }}" onclick="sharePost(this.dataset.postId)" title="Share">
                                     <span>🔗</span>
                                 </button>
+                                {% if user.is_authenticated and user == post.user %}
+                                  <a href="{% url 'edit_post' post.id %}" class="post-action-btn" title="Edit">✏️</a>
+                                  <button type="button" class="post-action-btn delete-btn" data-delete-url="{% url 'delete_post' post.id %}" data-post-content="{{ post.content|escapejs }}" title="Delete">🗑️</button>
+                                {% endif %}
                             </div>
                         </div>
                         
                         <div class="post-card-body">
-    <p>{{ post.content }}</p>
+    <a href="{% url 'post_detail' post.id %}" class="profile-post-link"><p>{{ post.content }}</p></a>
                         </div>
 
                         <div class="post-card-footer">
                             <div class="post-engagement">
-                                <div class="engagement-item like-item" data-likes="{{ post.like_set.count }}">
+                                <div class="engagement-item like-item" data-likes="{{ post.like_count }}">
                                     <span class="engagement-icon">❤️</span>
-                                    <span class="engagement-count">{{ post.like_set.count }}</span>
+                                    <span class="engagement-count">{{ post.like_count }}</span>
                                 </div>
                                 <div class="engagement-item comment-item">
                                     onclick="MicroBolgHub.toggleProfileComments({{ post.id }})">
                                     <span class="engagement-icon">💬</span>
-                                    <span class="engagement-count">{{ post.comment_set.count }}</span>
+                                    <span class="engagement-count">{{ post.comment_count }}</span>
                                 </div>
                                
 
