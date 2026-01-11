@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirm Delete Community{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Delete community</h2>
+  <p>Are you sure you want to delete the community "{{ community.name }}"? This will remove all posts and comments within it.</p>
+  <div class="community-preview">
+    <p>{{ community.description|default:"(no description)" }}</p>
+  </div>
+
+  <form method="POST" action="{% url 'delete_community' community.id %}">
+    {% csrf_token %}
+    <button type="submit" class="primary-btn">Yes, delete community</button>
+    <a href="{% url 'community_detail' community.id %}" class="btn-secondary" style="margin-left:0.5rem;">Cancel</a>
+  </form>
+</div>
+{% endblock %}

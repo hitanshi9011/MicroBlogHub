@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <h2>Your Drafts</h2>
 
 {% for post in drafts %}
@@ -10,3 +11,39 @@
 {% empty %}
   <p>No drafts yet</p>
 {% endfor %}
+=======
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Drafts | MicroBlogHub{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2>Your Drafts</h2>
+
+  <div id="drafts-list" class="drafts-list">
+  {% for post in drafts %}
+    <div class="draft-card" data-post-id="{{ post.id }}">
+      <div class="draft-avatar">{{ post.user.username|first|upper }}</div>
+      <div style="flex:1">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem">
+          <div class="draft-meta"><strong>@{{ post.user.username }}</strong> · <span>{{ post.created_at|timesince }} ago</span></div>
+        </div>
+        <textarea class="draft-content" maxlength="280" rows="3" placeholder="Write your draft...">{% if post.content and post.content != '...' %}{{ post.content }}{% endif %}</textarea>
+        <div class="draft-actions">
+          <button data-action="save" class="icon-btn" title="Save draft" aria-label="Save draft"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#e5e7eb"/></svg></button>
+          <button data-action="publish" class="icon-btn" title="Publish draft" aria-label="Publish draft"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7l3-7z" fill="#e5e7eb"/></svg></button>
+          <button data-action="delete" class="link-btn danger" aria-label="Delete draft">Delete</button>
+          <div class="draft-status" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p>No drafts yet</p>
+  {% endfor %}
+  </div>
+
+  <script src="{% static 'js/drafts.js' %}"></script>
+</div>
+{% endblock %}
+>>>>>>> sub-branch2
