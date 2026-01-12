@@ -92,7 +92,7 @@
 {% if user.is_authenticated and user != profile_user %}
                         <div class="profile-actions">
   {% if is_following %}
-                                <form method="POST" action="{% url 'unfollow' profile_user.id %}" style="display:inline;">
+                                <form method="POST" action="{% url 'unfollow_user' profile_user.id %}" style="display:inline;" class="ajax-follow">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-follow btn-unfollow">
                                         <span class="btn-icon">✓</span>
@@ -100,7 +100,7 @@
                                     </button>
                                 </form>
   {% else %}
-                                <form method="POST" action="{% url 'follow' profile_user.id %}" style="display:inline;">
+                                <form method="POST" action="{% url 'follow_user' profile_user.id %}" style="display:inline;" class="ajax-follow">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-follow">
                                         <span class="btn-icon">+</span>
@@ -236,7 +236,7 @@ style="display: none; margin-top: 1rem;">
 {% endif %}
 
 {% if user.is_authenticated %}
-<form method="SENT"
+<form method="POST"
    action="{% url 'add_comment' post.id %}"
    style="margin-top: 0.75rem;">
 {% csrf_token %}

@@ -311,23 +311,6 @@
             </div>
         </div>
 
-        <div class="notification-body">
-            {% if unread_notifications %}
-                <ul class="notification-list">
-                    {% for notification in unread_notifications %}
-                        <li class="notification-item">
-                            <div class="notification-text">
-                                {{ notification.message }}
-                            </div>
-                            <div class="notification-time">
-                                {{ notification.created_at|timesince }} ago
-                            </div>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
-
     </nav>
 
     <!-- MAIN CONTENT -->

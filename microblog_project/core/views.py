@@ -443,12 +443,16 @@ from django.db import transaction, IntegrityError
 def follow_user(request, user_id):
     # Only allow POST
     if request.method != 'POST':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
         messages.error(request, 'Invalid request method')
         return redirect(request.META.get('HTTP_REFERER', 'home'))
 
     target = get_object_or_404(User, id=user_id)
 
     if request.user == target:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': "You cannot follow yourself."}, status=400)
         messages.error(request, "You cannot follow yourself.")
         return redirect('profile', username=target.username)
 
@@ -471,6 +475,18 @@ def follow_user(request, user_id):
             recipient=target,
             notification_type='follow'
         )
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        # return JSON so frontend JS doesn't choke on redirects
+        return JsonResponse({
+            'status': 'ok',
+            'created': created,
+            'is_following': True,
+            'message': f"You are now following @{target.username}." if created else f"You are already following @{target.username}.",
+            'followers_count': Follow.objects.filter(following=target).count(),
+        })
+
+    if created:
         messages.success(request, f"You are now following @{target.username}.")
     else:
         messages.info(request, f"You are already following @{target.username}.")
@@ -482,26 +498,37 @@ def follow_user(request, user_id):
 def unfollow_user(request, user_id):
     # Only allow POST for unfollow action
     if request.method != 'POST':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
         messages.error(request, 'Invalid method')
         return redirect(request.META.get('HTTP_REFERER', 'home'))
 
     target = get_object_or_404(User, id=user_id)
 
     if request.user == target:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': "Invalid operation."}, status=400)
         messages.error(request, "Invalid operation.")
         return redirect('profile', username=target.username)
 
-    deleted, _ = Follow.objects.filter(
+    deleted = Follow.objects.filter(
         follower=request.user,
         following=target
-    ).delete()
+    ).delete()[0]
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'ok',
+            'deleted': bool(deleted),
+            'message': f"You unfollowed @{target.username}." if deleted else f"You were not following @{target.username}.",
+            'followers_count': Follow.objects.filter(following=target).count(),
+        })
 
     if deleted:
         messages.success(request, f"You unfollowed @{target.username}.")
     else:
         messages.info(request, f"You were not following @{target.username}.")
 
-    # Stay on profile page
     return redirect('profile', username=target.username)
 
 # =========================
@@ -927,6 +954,74 @@ def draft_action(request, post_id):
         return redirect('drafts')   
 
 @login_required
+def edit_draft(request, post_id):
+    """
+    Render a page to edit a draft (GET) or update/publish it (POST).
+    Returns JSON if requested via X-Requested-With header.
+    """
+    post = get_object_or_404(Post, id=post_id, status='draft')
+
+    if post.user != request.user:
+        messages.error(request, "You don't have permission to edit this draft")
+        return redirect('drafts')
+
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        action = request.POST.get('action', 'save')
+
+        if content == '':
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'message': 'Post content cannot be empty'}, status=400)
+            messages.error(request, 'Post content cannot be empty')
+            return redirect('drafts')
+
+        post.content = content
+        if action == 'publish':
+            post.status = 'published'
+        else:
+            post.status = 'draft'
+        post.save()
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'ok',
+                'message': 'Draft published' if action == 'publish' else 'Draft saved',
+                'post_id': post.id,
+                'content': post.content,
+                'action': action,
+            })
+
+        messages.success(request, 'Draft published' if action == 'publish' else 'Draft saved')
+        return redirect('home' if action == 'publish' else 'drafts')
+
+    return render(request, 'edit_draft.html', {'post': post})
+
+
+@login_required
+def delete_draft(request, post_id):
+    """
+    Delete a draft via POST. Returns JSON for AJAX requests.
+    """
+    post = get_object_or_404(Post, id=post_id, status='draft')
+
+    if post.user != request.user:
+        messages.error(request, "You don't have permission to delete this draft")
+        return redirect('drafts')
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid method')
+        return redirect('drafts')
+
+    post.delete()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'message': 'Draft deleted', 'post_id': post_id})
+
+    messages.success(request, 'Draft deleted')
+    return redirect('drafts')
+
+
+@login_required
 def delete_account(request):
     if request.method == "POST":
         user = request.user
@@ -1145,3 +1240,4 @@ def delete_community(request, community_id):
         return redirect('community_list')
 
     return render(request, 'confirm_delete_community.html', {'community': community})
+

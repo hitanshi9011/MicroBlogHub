@@ -8,14 +8,23 @@ class Follow(models.Model):
     following = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
 
 class Post(models.Model):
+    STATUS_CHOICES = (
+        ("published", "Published"),
+        ("draft", "Draft"),
+    )
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    status = models.CharField(max_length=20, default="published")
+    content = models.TextField() 
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default="published"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
-
     def __str__(self):
-        return f"{self.user.username}: {self.content[:30]}"
+        return f"{self.user.username} - {self.status}"
+
 
 class Follow(models.Model):
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following_set', on_delete=models.CASCADE)
@@ -33,26 +42,6 @@ class Follow(models.Model):
     
 from django.contrib.auth.models import User
 from django.db import models
-
-
-class Post(models.Model):
-    STATUS_CHOICES = (
-        ("published", "Published"),
-        ("draft", "Draft"),
-    )
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(max_length=280)
-    status = models.CharField(
-        max_length=10,
-        choices=STATUS_CHOICES,
-        default="published"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.status}"
-
 
 class Message(models.Model):
     sender = models.ForeignKey(

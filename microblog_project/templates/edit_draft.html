@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Draft | MicroBlogHub{% endblock %}
+{% block content %}
+<div class="container">
+  <h2>Edit Draft</h2>
+  <form method="post" action="{% url 'edit_draft' post.id %}">
+    {% csrf_token %}
+    <textarea name="content" rows="6" maxlength="280" required>{{ post.content }}</textarea>
+    <div style="margin-top:1rem">
+      <button type="submit" name="action" value="save" class="btn">Save</button>
+      <button type="submit" name="action" value="publish" class="btn primary">Publish</button>
+      <a href="{% url 'drafts' %}" class="btn link">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
