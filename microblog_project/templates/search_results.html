@@ -62,7 +62,7 @@
             <div class="post-actions">
               <div class="like-section">
                 {% if post.id in liked_posts %}
-                  <a href="{% url 'unlike' post.id %}" class="action-btn liked">
+                  <a href="{% url 'unlike_post' post.id %}" class="action-btn liked">
                     <span class="action-icon">❤️</span>
                     <span class="action-count">{{ post.like_count }}</span>
                   </a>
