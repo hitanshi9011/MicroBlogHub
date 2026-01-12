@@ -92,20 +92,26 @@
 {% if user.is_authenticated and user != profile_user %}
                         <div class="profile-actions">
   {% if is_following %}
-                                <a href="{% url 'unfollow' profile_user.id %}" class="btn-follow btn-unfollow">
-                                    <span class="btn-icon">✓</span>
-                                    <span>Following</span>
-                                </a>
+                                <form method="POST" action="{% url 'unfollow' profile_user.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-follow btn-unfollow">
+                                        <span class="btn-icon">✓</span>
+                                        <span>Following</span>
+                                    </button>
+                                </form>
   {% else %}
-                                <a href="{% url 'follow' profile_user.id %}" class="btn-follow">
-                                    <span class="btn-icon">+</span>
-                                    <span>Follow</span>
-                                </a>
+                                <form method="POST" action="{% url 'follow' profile_user.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-follow">
+                                        <span class="btn-icon">+</span>
+                                        <span>Follow</span>
+                                    </button>
+                                </form>
   {% endif %}
-                            <button class="btn-secondary" onclick="showMessageModal()">
+                            <a href="{% url 'conversation' profile_user.username %}" class="btn-secondary">
                                 <span class="btn-icon">💬</span>
                                 <span>Message</span>
-                            </button>
+                            </a>
                         </div>
                     {% elif user.is_authenticated and user == profile_user %}
                         <div class="profile-actions">
@@ -189,15 +195,60 @@
                                     <span class="engagement-count">{{ post.like_count }}</span>
                                 </div>
                                 <div class="engagement-item comment-item">
+                                    onclick="MicroBolgHub.toggleProfileComments({{ post.id }})">
                                     <span class="engagement-icon">💬</span>
                                     <span class="engagement-count">{{ post.comment_count }}</span>
                                 </div>
+                               
+
+</div>
+
                                 <div class="engagement-item share-item">
                                     <span class="engagement-icon">🔗</span>
                                     <span class="engagement-count">Share</span>
                                 </div>
                             </div>
   </div>
+  <!-- PROFILE COMMENTS SECTION -->
+<div class="profile-comments-section"
+id="profile-comments-{{ post.id }}"
+style="display: none; margin-top: 1rem;">
+
+{% if post.comment_set.count > 0 %}
+{% for comment in post.comment_set.all %}
+ <div class="comment-item" style="margin-bottom: 0.75rem;">
+   <div class="comment-avatar">
+     {{ comment.user.username|first|upper }}
+   </div>
+   <div class="comment-content">
+     <strong>{{ comment.user.username }}</strong>
+     <span class="comment-time">
+       · {{ comment.created_at|timesince }} ago
+     </span>
+     <div class="comment-text">{{ comment.text }}</div>
+   </div>
+ </div>
+{% endfor %}
+{% else %}
+<p style="color: var(--text-soft); font-size: 0.9rem;">
+ No comments yet
+</p>
+{% endif %}
+
+{% if user.is_authenticated %}
+<form method="SENT"
+   action="{% url 'add_comment' post.id %}"
+   style="margin-top: 0.75rem;">
+{% csrf_token %}
+<input type="text"
+      name="comment"
+      placeholder="Write a comment..."
+      required
+      style="width: 100%; padding: 0.6rem; border-radius: 10px;">
+</form>
+{% endif %}
+</div>
+
                     </article>
 {% endfor %}
             </div>
@@ -778,7 +829,7 @@
         align-items: center;
         gap: 0.5rem;
         font-size: 0.9rem;
-        color: var(--text-soft);
+        color: var (--text-soft);
         cursor: pointer;
         padding: 0.5rem 0.75rem;
         border-radius: 12px;
@@ -1023,13 +1074,6 @@
 </style>
 
 <script>
-function showMessageModal() {
-    if (window.MicroBlogHub && window.MicroBlogHub.showToast) {
-        window.MicroBlogHub.showToast('Message feature coming soon!', 'info');
-    } else {
-        alert('Message feature coming soon!');
-    }
-}
 
 function editProfile() {
     if (window.MicroBlogHub && window.MicroBlogHub.showToast) {

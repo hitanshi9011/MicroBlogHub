@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base_auth.html" %}
 {% load static %}
 
 {% block title %}Login | MicroBlogHub{% endblock %}
@@ -35,14 +35,24 @@
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input 
+              
+                <div class="password-wrapper">
+                  <input 
                     type="password" 
                     id="password"
                     name="password" 
                     placeholder="Enter your password" 
                     required
-                >
-            </div>
+                  >
+              
+                  <span id="togglePassword">
+                    <i class="fa-solid fa-eye"></i>
+                  </span>
+                </div>
+              </div>
+              
+
+          
 
             <button type="submit" class="auth-submit-btn">
                 <span>Sign In</span>
@@ -244,4 +254,7 @@
         }
     }
 </style>
+
+<script src="{% static 'js/show_password.js' %}"></script>
 {% endblock %}
+

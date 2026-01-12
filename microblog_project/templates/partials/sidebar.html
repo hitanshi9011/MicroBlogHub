@@ -1,0 +1,73 @@
+{% load static %}
+<aside class="sidebar">
+
+    <div class="brand">
+      <div class="brand-text">
+        <h1>vibetext E3</h1>
+        <p>Express • Engage • Echo</p>
+      </div>
+    </div>
+
+    {% if request.user.is_authenticated %}
+    <section class="current-user-card">
+      <div class="avatar avatar-lg">
+         <img src="{{ profile.photo.url }}{% if profile.photo.name %}?v={{ profile.photo.name }}{% endif %}" alt="{{ request.user.username }}'s avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />
+      </div>
+      <div class="user-meta">
+        <h2>@{{ request.user.username }}</h2>
+        <p>Logged in user</p>
+      </div>
+
+      <a href="{% url 'profile' request.user.username %}" class="btn-link">View Profile</a>
+    </section>
+    {% else %}
+    <section class="current-user-card guest">
+      <p>
+        <a href="{% url 'login' %}">Login</a> or <a href="{% url 'register' %}">Sign up</a> to post and interact.
+      </p>
+    </section>
+    {% endif %}
+
+
+    <section class="communities-box">
+      <h3 class="communities-title">Communities</h3>
+      <p class="communities-desc">Explore communities and join the conversation.</p>
+      <p class="communities-link"><a href="{% url 'community_list' %}">Browse communities</a></p>
+
+      {% if request.user.is_authenticated %}
+        <div class="communities-create">
+          <a class="primary-btn" href="{% url 'create_community' %}">Create community</a>
+        </div>
+      {% else %}
+        <div class="communities-create">
+          <a href="{% url 'login' %}">Log in</a> to create a community.
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="people-section">
+      <h3>People</h3>
+
+      {% for u in users %}
+      <div class="person-row">
+        <div class="avatar">{{ u.username|first|upper }}</div>
+        <div class="person-main">
+          <strong>{{ u.username }}</strong>
+        </div>
+
+        {% if u.id in following_ids %}
+          <form method="POST" action="{% url 'unfollow' u.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="follow-chip">Unfollow</button>
+          </form>
+        {% else %}
+          <form method="POST" action="{% url 'follow' u.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="follow-chip">Follow</button>
+          </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </section>
+
+</aside>

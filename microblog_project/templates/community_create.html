@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Create Community | MicroBlogHub{% endblock %}
+
+{% block content %}
+<section class="container full-width community-create">
+  <h1>Create a Community</h1>
+      <form method="POST" action="">
+        {% csrf_token %}
+        <div class="form-row">
+          <label for="name">Name</label>
+          <input id="name" name="name" maxlength="120" required class="text-input">
+        </div>
+        <div class="form-row">
+          <label for="description">Description (optional)</label>
+          <textarea id="description" name="description" rows="4" maxlength="1000" class="text-input"></textarea>
+        </div>
+        <div class="form-actions" style="margin-top:1rem;">
+          <button type="submit" class="primary-btn">Create</button>
+          <a href="{% url 'community_list' %}" class="icon-btn" style="margin-left:0.5rem;">Cancel</a>
+        </div>
+      </form>
+</section>
+
+{% endblock %}

@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    'core',
+
+        'core.apps.CoreConfig',
+
 ]
 
 MIDDLEWARE = [
@@ -68,6 +70,8 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'core.context_processors.current_profile',
                 'django.contrib.messages.context_processors.messages',
+                    'core.context_processors.notifications',
+
             ],
         },
     },
@@ -85,8 +89,6 @@ DATABASES = {
         "postgresql://microblog_db_cqca_user:tkqV2s3aILNAjD40sHbLT4Vyz2XgSMT2@dpg-d5d6i7lactks73chtrvg-a.singapore-postgres.render.com/microblog_db_cqca"
     )
 }
-
-
 
 
 # Password validation
@@ -144,5 +146,7 @@ STATIC_URL = '/static/'
 
 # Optional if using collectstatic
 STATICFILES_DIRS = [BASE_DIR / "static"]
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 

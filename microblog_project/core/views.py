@@ -1,9 +1,8 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.models import User
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth import authenticate, login, logout
-from django.contrib import messages
-from .models import Post
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.db.models import Q, Count
 from .models import Post, Follow
 from django.shortcuts import redirect, get_object_or_404
@@ -27,66 +26,176 @@ from django.templatetags.static import static
 
 logger = logging.getLogger(__name__)
 
+from django.db import transaction, IntegrityError
+from django.template.loader import render_to_string
+from django.contrib.auth import get_user_model
+from collections import Counter
+import re
 
+from .models import (
+    Post,
+    Follow,
+    Like,
+    Comment,
+    CommentLike,
+    Message,
+    Notification,
+    Community,
+    CommunityPost,
+    CommunityComment,
+)
+
+User = get_user_model()
 
 def home(request):
-    if request.user.is_authenticated:
-        # Users that the current user follows
-        following_ids = Follow.objects.filter(
-            follower=request.user
-        ).values_list('following_id', flat=True)
+    # =========================
+    # TOGGLE COMMUNITY POSTS
+    # =========================
+    if request.GET.get('toggle_communities') is not None:
+        current = request.session.get('include_communities', False)
+        request.session['include_communities'] = not current
+        return redirect('home')
 
-        # Show posts from followed users + self
+    include_communities = request.session.get('include_communities', False)
+
+    # =========================
+    # DEFAULT CONTEXT
+    # =========================
+    posts = []
+    users = []
+    following_ids = []
+    liked_posts = []
+    liked_comments = []
+    unread_notifications = []
+    unread_notifications_count = 0
+
+    # =========================
+    # AUTHENTICATED USER LOGIC
+    # =========================
+    if request.user.is_authenticated:
+        # Notifications
+        unread_notifications = Notification.objects.filter(
+            recipient=request.user,
+            is_read=False
+        ).order_by('-created_at')
+        unread_notifications_count = unread_notifications.count()
+
+        # Following
+        following_ids = list(
+            Follow.objects.filter(
+                follower=request.user
+            ).values_list('following_id', flat=True)
+        )
+
+        # Feed: followed users + self
         posts = Post.objects.filter(
-            user__in=list(following_ids) + [request.user.id]
+            user__in=following_ids + [request.user.id],
+            status='published'
         ).select_related('user').annotate(
             like_count=Count('like', distinct=True),
             comment_count=Count('comment', distinct=True)
         ).order_by('-created_at')
 
-        # Limit people list to a reasonable number to improve render performance
+        # People section
         users = User.objects.exclude(id=request.user.id)[:20]
 
+        # Likes
+        liked_posts = list(
+            Like.objects.filter(user=request.user)
+            .values_list('post_id', flat=True)
+        )
+
+        # Comment likes
+        liked_comments = list(
+            CommentLike.objects.filter(user=request.user)
+            .values_list('comment_id', flat=True)
+        )
+
+    # =========================
+    # GUEST USER LOGIC
+    # =========================
     else:
-        posts = Post.objects.all().select_related('user').annotate(
+        posts = Post.objects.filter(
+            status='published'
+        ).select_related('user').annotate(
             like_count=Count('like', distinct=True),
             comment_count=Count('comment', distinct=True)
         ).order_by('-created_at')
-        users = []
-        following_ids = []
 
-    # Compute trending hashtags and top liked posts
-    import re
-    from collections import Counter
+    # =========================
+    # TRENDING HASHTAGS
+    # =========================
+    recent_posts = Post.objects.filter(
+        status='published'
+    ).order_by('-created_at')[:500]
 
-    # Limit the scope for computing trending hashtags to recent posts (reduces scanning all historical posts)
-    all_posts = Post.objects.order_by('-created_at')[:500]
     hashtag_counter = Counter()
-    for p in all_posts:
+    for p in recent_posts:
         tags = re.findall(r"#(\w+)", p.content)
         for t in tags:
             hashtag_counter[t.lower()] += 1
 
-    top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-    # Top liked posts
-    top_posts = Post.objects.annotate(like_count=Count('like')).select_related('user').order_by('-like_count', '-created_at')[:5]
+    top_hashtags = [h for h, c in hashtag_counter.most_common(8)]
 
-    context = {
-        'posts': posts,
+    # =========================
+    # TRENDING POSTS
+    # =========================
+    trending_posts = Post.objects.filter(
+        status='published'
+    ).annotate(
+        like_count=Count('like')
+    ).select_related('user').order_by(
+        '-like_count', '-created_at'
+    )[:5]
+
+    # =========================
+    # COMMUNITY POSTS (OPTIONAL)
+    # =========================
+    posts_list = list(posts)
+
+    if include_communities:
+        from .models import CommunityPost
+
+        community_posts = CommunityPost.objects.select_related(
+            'user', 'community'
+        ).prefetch_related(
+            'comments'
+        ).order_by('-created_at')[:50]
+
+        for cp in community_posts:
+            cp.is_community = True
+            cp.community_obj = cp.community
+            cp.like_count = 0
+            cp.comment_set = cp.comments
+
+        for p in posts_list:
+            p.is_community = False
+
+        posts_list.extend(list(community_posts))
+    else:
+        for p in posts_list:
+            p.is_community = False
+
+    posts_list.sort(key=lambda x: x.created_at, reverse=True)
+
+    # =========================
+    # FINAL RENDER
+    # =========================
+    return render(request, 'home.html', {
+        'posts': posts_list,
         'users': users,
         'following_ids': following_ids,
+        'liked_posts': liked_posts,
+        'liked_comments': liked_comments,
+        'unread_notifications': unread_notifications,
+        'unread_notifications_count': unread_notifications_count,
         'trending_hashtags': top_hashtags,
-        'trending_posts': top_posts,
-    }
-    
-    return render(request, 'home.html', context)
-    liked_posts = []
-    if request.user.is_authenticated:
-      liked_posts = Like.objects.filter(
-        user=request.user
-      ).values_list('post_id', flat=True)
+        'trending_posts': trending_posts,
+        'include_communities': include_communities,
+    })
 
 
+@login_required
 def profile(request, username):
     profile_user = get_object_or_404(User, username=username)
 
@@ -100,6 +209,16 @@ def profile(request, username):
         )
         .order_by('-created_at')
     )
+    # Show drafts only to the profile owner
+    if request.user == profile_user:
+        posts_qs = Post.objects.filter(user=profile_user)
+    else:
+        posts_qs = Post.objects.filter(user=profile_user, status='published')
+
+    posts = posts_qs.select_related('user').annotate(
+        like_count=Count('like', distinct=True),
+        comment_count=Count('comment', distinct=True)
+    ).order_by('-created_at')
 
     posts_count = posts.count()
     followers_count = Follow.objects.filter(following=profile_user).count()
@@ -136,12 +255,19 @@ def profile(request, username):
     return render(request, 'core/profile.html', context)
 
 
+# =========================
+# AUTH
+# =========================
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post.objects.select_related('user').annotate(
         like_count=Count('like', distinct=True),
         comment_count=Count('comment', distinct=True)
     ), id=post_id)
+
+    # Prevent others from viewing drafts
+    if post.status == 'draft' and (not request.user.is_authenticated or request.user != post.user):
+        return redirect('home')
 
     liked = False
     if request.user.is_authenticated:
@@ -152,14 +278,14 @@ def post_detail(request, post_id):
     # compute trending hashtags and top posts for sidebar
     import re
     from collections import Counter
-    all_posts = Post.objects.order_by('-created_at')[:500]
+    all_posts = Post.objects.filter(status='published').order_by('-created_at')[:500]
     hashtag_counter = Counter()
     for p in all_posts:
         tags = re.findall(r"#(\w+)", p.content)
         for t in tags:
             hashtag_counter[t.lower()] += 1
     top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-    top_posts = Post.objects.annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
+    top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
 
     context = {
         'post': post,
@@ -209,7 +335,8 @@ def search(request):
         users = User.objects.filter(username__icontains=q)
 
     # annotate and select_related for better performance (avoid N+1 queries in templates)
-    posts = posts.select_related('user').annotate(
+    # Only show published posts in search results
+    posts = posts.filter(status='published').select_related('user').annotate(
         like_count=Count('like', distinct=True),
         comment_count=Count('comment', distinct=True)
     )
@@ -228,13 +355,14 @@ def search(request):
 
     # compute trending hashtags and top posts for sidebar
     all_posts = Post.objects.all()
+    all_posts = Post.objects.filter(status='published')
     hashtag_counter = Counter()
     for p in all_posts:
         tags = re.findall(r"#(\w+)", p.content)
         for t in tags:
             hashtag_counter[t.lower()] += 1
     top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-    top_posts = Post.objects.annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
+    top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
 
     context = {
         'posts': posts,
@@ -258,30 +386,29 @@ def register(request):
             messages.error(request, 'Username already exists')
             return redirect('register')
 
-        user = User.objects.create_user(username=username, password=password)
-        user.save()
-        # Create profile for the new user
-        Profile.objects.create(user=user)
+        User.objects.create_user(username=username, password=password)
         messages.success(request, 'Account created successfully')
         return redirect('login')
 
     return render(request, 'register.html')
 
-   
+
 def login_view(request):
     if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
+        user = authenticate(
+            request,
+            username=request.POST['username'],
+            password=request.POST['password']
+        )
+        if user:
             login(request, user)
             return redirect('home')
-        else:
-            messages.error(request, 'Invalid credentials')
-            return redirect('login')
+
+        messages.error(request, 'Invalid credentials')
+        return redirect('login')
 
     return render(request, 'login.html')
+
 
 def logout_view(request):
     logout(request)
@@ -290,52 +417,132 @@ def logout_view(request):
 
 @login_required
 def create_post(request):
-    if request.method == 'POST':
-        content = request.POST.get('content')
-
-        if content.strip() != "":
+    if request.method == "POST":
+        content = request.POST.get("content", "").strip()
+        if content:
             Post.objects.create(
                 user=request.user,
-                content=content
+                content=content,
+                status="published"
             )
-        return redirect('home')
+    return redirect('home')
+
+
+# =========================
+# PROFILE
+# ========================
+
+
+# =========================
+# FOLLOW / UNFOLLOW
+# =========================
+
+from django.db import transaction, IntegrityError
 
 @login_required
 def follow_user(request, user_id):
-    user_to_follow = get_object_or_404(User, id=user_id)
+    # Only allow POST
+    if request.method != 'POST':
+        messages.error(request, 'Invalid request method')
+        return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-    # Prevent user from following themselves
-    if user_to_follow != request.user:
-        Follow.objects.get_or_create(
+    target = get_object_or_404(User, id=user_id)
+
+    if request.user == target:
+        messages.error(request, "You cannot follow yourself.")
+        return redirect('profile', username=target.username)
+
+    try:
+        with transaction.atomic():
+            follow_obj, created = Follow.objects.get_or_create(
+                follower=request.user,
+                following=target
+            )
+    except IntegrityError:
+        follow_obj = Follow.objects.filter(
             follower=request.user,
-            following=user_to_follow
-        )
+            following=target
+        ).first()
+        created = bool(follow_obj)
 
-    return redirect('home')
+    if created:
+        Notification.objects.create(
+            sender=request.user,
+            recipient=target,
+            notification_type='follow'
+        )
+        messages.success(request, f"You are now following @{target.username}.")
+    else:
+        messages.info(request, f"You are already following @{target.username}.")
+
+    return redirect('profile', username=target.username)
+
+
 @login_required
 def unfollow_user(request, user_id):
-    user_to_unfollow = get_object_or_404(User, id=user_id)
+    # Only allow POST for unfollow action
+    if request.method != 'POST':
+        messages.error(request, 'Invalid method')
+        return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-    Follow.objects.filter(
+    target = get_object_or_404(User, id=user_id)
+
+    if request.user == target:
+        messages.error(request, "Invalid operation.")
+        return redirect('profile', username=target.username)
+
+    deleted, _ = Follow.objects.filter(
         follower=request.user,
-        following=user_to_unfollow
+        following=target
     ).delete()
 
-    return redirect('home')
+    if deleted:
+        messages.success(request, f"You unfollowed @{target.username}.")
+    else:
+        messages.info(request, f"You were not following @{target.username}.")
 
-from .models import Like
+    # Stay on profile page
+    return redirect('profile', username=target.username)
+
+# =========================
+# LIKE / UNLIKE
+# =========================
 
 @login_required
 def like_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
+
+    Like.objects.get_or_create(
+        user=request.user,
+        post=post
+    )
+
+    if post.user != request.user:
+       Notification.objects.create(
+    sender=request.user,
+    recipient=post.user,
+    notification_type='like',
+    post=post
+)
+
+
+    return redirect('home')
     Like.objects.get_or_create(user=request.user, post=post)
     return redirect(request.META.get('HTTP_REFERER', 'home'))
+
 
 @login_required
 def unlike_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
+    Like.objects.filter(recipient=request.user, post=post).delete()
+    return redirect('home')
     Like.objects.filter(user=request.user, post=post).delete()
     return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+
+# =========================
+# COMMENTS
+# =========================
 
 @login_required
 def add_comment(request, post_id):
@@ -343,13 +550,226 @@ def add_comment(request, post_id):
 
     if request.method == 'POST':
         text = request.POST.get('comment')
-        if text.strip():
+
+        if text and text.strip():
             Comment.objects.create(
                 user=request.user,
                 post=post,
                 text=text
             )
 
+            if post.user != request.user:
+                Notification.objects.create(
+    sender=request.user,
+    recipient=post.user,
+    notification_type='comment',
+    post=post
+)
+
+
+    return redirect('home')
+
+
+@login_required
+def delete_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    if comment.user == request.user:
+        comment.delete()
+        messages.success(request, 'Comment deleted')
+    else:
+        messages.error(request, 'Not allowed')
+
+    return redirect('home')
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def edit_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    if request.user != comment.user:
+        return redirect('home')
+
+    if request.method == "POST":
+        new_text = request.POST.get("text")
+        if new_text:
+            comment.text = new_text
+            comment.save()
+
+    return redirect('home')
+
+@login_required
+def reply_comment(request, comment_id):
+    parent_comment = get_object_or_404(Comment, id=comment_id)
+
+    if request.method == "POST":
+        text = request.POST.get("text")
+        if text:
+            Comment.objects.create(
+                user=request.user,
+                post=parent_comment.post,
+                text=text,
+                parent=parent_comment
+            )
+
+    return redirect('home')
+
+@login_required
+def toggle_comment_like(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    like, created = CommentLike.objects.get_or_create(
+        user=request.user,
+        comment=comment
+    )
+
+    if not created:
+        like.delete()
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+
+
+
+# =========================
+# NOTIFICATIONS
+# =========================
+
+@login_required
+
+def notifications(request):
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'core/notifications.html', {
+        'notifications': notifications
+    })
+
+
+
+@login_required
+def mark_notifications_read(request):
+    Notification.objects.filter(
+        recipient=request.user,
+        is_read=False
+    ).update(is_read=True)
+
+    return JsonResponse({"status": "ok"})
+
+# =========================
+# MESSAGES
+# =========================
+
+@login_required
+def messages_list(request):
+    sent_to = Message.objects.filter(sender=request.user).values_list('recipient', flat=True)
+    received_from = Message.objects.filter(recipient=request.user).values_list('sender', flat=True)
+
+    users = User.objects.filter(
+        Q(id__in=sent_to) | Q(id__in=received_from)
+    ).exclude(id=request.user.id)
+
+    conversations = []
+    for user in users:
+        last_message = Message.objects.filter(
+            Q(sender=request.user, recipient=user) |
+            Q(sender=user, recipient=request.user)
+        ).order_by('-created_at').first()
+
+        unread_count = Message.objects.filter(
+            sender=user,
+            recipient=request.user,
+            is_read=False
+        ).count()
+
+        conversations.append({
+            'user': user,
+            'last_message': last_message,
+            'unread_count': unread_count
+        })
+
+    conversations.sort(
+        key=lambda x: x['last_message'].created_at if x['last_message'] else x['user'].date_joined,
+        reverse=True
+    )
+
+    return render(request, 'core/messages.html', {
+        'conversations': conversations
+    })
+
+
+@login_required
+def conversation(request, username):
+    other_user = get_object_or_404(User, username=username)
+
+    Message.objects.filter(
+        sender=other_user,
+        recipient=request.user,
+        is_read=False
+    ).update(is_read=True)
+
+    messages_list = Message.objects.filter(
+        Q(sender=request.user, recipient=other_user) |
+        Q(sender=other_user, recipient=request.user)
+    ).order_by('created_at')
+
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        if content:
+            Message.objects.create(
+                sender=request.user,
+                recipient=other_user,
+                content=content
+            )
+            return redirect('conversation', username=username)
+
+    return render(request, 'core/conversation.html', {
+        'other_user': other_user,
+        'messages': messages_list
+    })
+
+
+from django.contrib.auth.decorators import login_required
+from django.template.loader import render_to_string
+from django.http import JsonResponse
+from core.models import Notification
+
+@login_required
+def notification_dropdown(request):
+    all_notifications = Notification.objects.filter(
+        recipient=request.user
+    )
+
+    unread_count = all_notifications.filter(is_read=False).count()
+
+    notifications = all_notifications.order_by('-created_at')[:5]
+
+    html = render_to_string(
+        "notifications/dropdown.html",
+        {"notifications": notifications},
+        request=request
+    )
+
+    return JsonResponse({
+        "html": html,
+        "count": unread_count
+    })
+from django.shortcuts import get_object_or_404, redirect
+
+@login_required
+def notification_redirect(request, id):
+    notification = get_object_or_404(
+        Notification,
+        id=id,
+        recipient=request.user
+    )
+
+    notification.is_read = True
+    notification.save()
+
+    return redirect(notification.get_redirect_url())
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
@@ -388,6 +808,8 @@ def delete_post(request, post_id):
     # Delete only via POST to avoid accidental deletes
     if request.method == 'POST':
         post.delete()
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'ok', 'message': 'Post deleted', 'post_id': post_id})
         messages.success(request, 'Post deleted')
         return redirect('home')
 
@@ -428,6 +850,81 @@ def edit_profile(request):
         'profile_form': profile_form,
         'password_form': password_form,
     })
+@login_required
+def drafts(request):
+    drafts_qs = Post.objects.filter(user=request.user, status='draft').select_related('user').annotate(
+        like_count=Count('like', distinct=True),
+        comment_count=Count('comment', distinct=True)
+    ).order_by('-created_at')
+
+    context = {'drafts': drafts_qs}
+    return render(request, 'drafts.html', context)
+
+@login_required
+def publish_draft(request, post_id):
+    # Prefer POST for publishing; support POST from non-idempotent flows
+    if request.method != 'POST':
+        messages.error(request, 'Invalid method')
+        return redirect('drafts')
+
+    post = get_object_or_404(Post, id=post_id)
+    if post.user != request.user:
+        messages.error(request, "You don't have permission to publish this draft")
+        return redirect('drafts')
+
+    post.status = 'published'
+    post.save()
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'message': 'Draft published', 'post_id': post.id})
+    messages.success(request, 'Draft published')
+    return redirect('home')
+
+@login_required
+def draft_action(request, post_id):
+    """Handle inline edit/save/publish actions for drafts via POST.
+
+    Expected POST fields: 'content' and 'action' where action is 'save' or 'publish'.
+    """
+    if request.method != 'POST':
+        messages.error(request, 'Invalid method')
+        return redirect('drafts')
+
+    post = get_object_or_404(Post, id=post_id)
+    if post.user != request.user:
+        messages.error(request, "You don't have permission to modify this draft")
+        return redirect('drafts')
+
+    content = request.POST.get('content', '').strip()
+    action = request.POST.get('action', 'save')
+
+    if content == '':
+        messages.error(request, 'Post content cannot be empty')
+        return redirect('drafts')
+
+    post.content = content
+    if action == 'publish':
+        post.status = 'published'
+    else:
+        post.status = 'draft'
+
+    post.save()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        resp = {
+            'status': 'ok',
+            'message': 'Draft published' if action == 'publish' else 'Draft saved',
+            'post_id': post.id,
+            'content': post.content,
+            'action': action,
+        }
+        return JsonResponse(resp)
+
+    if action == 'publish':
+        messages.success(request, 'Draft published')
+        return redirect('home')
+    else:
+        messages.success(request, 'Draft saved')
+        return redirect('drafts')   
 
 @login_required
 def delete_account(request):
@@ -495,3 +992,156 @@ def user_posts(request, username):
     })
 
 
+# --- Community views ---#
+from .models import Community, CommunityPost, CommunityComment
+
+
+def community_list(request):
+    communities = Community.objects.order_by('-created_at')
+    context = {'communities': communities}
+    return render(request, 'community_list.html', context)
+
+
+def community_detail(request, community_id):
+    community = get_object_or_404(Community, id=community_id)
+    posts = community.posts.select_related('user').prefetch_related('comments').order_by('-created_at')
+
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            messages.error(request, 'You must be logged in to post in a community')
+            return redirect('login')
+
+        # support posting a community post or adding a comment
+        action = request.POST.get('action')
+        if action == 'post':
+            content = request.POST.get('content', '').strip()
+            if content:
+                CommunityPost.objects.create(
+                    community=community,
+                    user=request.user,
+                    content=content
+                )
+                return redirect('community_detail', community_id=community.id)
+            else:
+                messages.error(request, 'Post content cannot be empty')
+        elif action == 'comment':
+            post_id = request.POST.get('post_id')
+            text = request.POST.get('comment', '').strip()
+            if post_id and text:
+                post = get_object_or_404(CommunityPost, id=post_id, community=community)
+                CommunityComment.objects.create(post=post, user=request.user, text=text)
+                return redirect('community_detail', community_id=community.id)
+            else:
+                messages.error(request, 'Comment text cannot be empty')
+
+    context = {
+        'community': community,
+        'posts': posts,
+    }
+    return render(request, 'community_detail.html', context)
+
+
+@login_required
+def delete_community_post(request, community_id, post_id):
+    community = get_object_or_404(Community, id=community_id)
+    post = get_object_or_404(CommunityPost, id=post_id, community=community)
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid method')
+        return redirect('community_detail', community_id=community.id)
+
+    # Allow deletion by post author or community owner
+    if request.user != post.user and request.user != community.created_by:
+        messages.error(request, "You don't have permission to delete this post")
+        return redirect('community_detail', community_id=community.id)
+
+    post.delete()
+    messages.success(request, 'Community post deleted')
+    return redirect('community_detail', community_id=community.id)
+
+
+@login_required
+def delete_community_comment(request, community_id, comment_id):
+    community = get_object_or_404(Community, id=community_id)
+    comment = get_object_or_404(CommunityComment, id=comment_id, post__community=community)
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid method')
+        return redirect('community_detail', community_id=community.id)
+
+    # Allow deletion by comment author or community owner
+    if request.user != comment.user and request.user != community.created_by:
+        messages.error(request, "You don't have permission to delete this comment")
+        return redirect('community_detail', community_id=community.id)
+
+    comment.delete()
+    messages.success(request, 'Comment deleted')
+    return redirect('community_detail', community_id=community.id)
+
+
+@login_required
+def edit_community_post(request, community_id, post_id):
+    community = get_object_or_404(Community, id=community_id)
+    post = get_object_or_404(CommunityPost, id=post_id, community=community)
+
+    # Only the post author can edit
+    if request.user != post.user:
+        messages.error(request, "You don't have permission to edit this post")
+        return redirect('community_detail', community_id=community.id)
+
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        if not content:
+            messages.error(request, 'Post content cannot be empty')
+        else:
+            post.content = content
+            post.save()
+            messages.success(request, 'Community post updated')
+            return redirect('community_detail', community_id=community.id)
+
+    context = {'community': community, 'post': post}
+    return render(request, 'community_edit_post.html', context)
+
+
+@login_required
+def create_community(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not name:
+            messages.error(request, 'Community name is required')
+            return redirect('community_list')
+
+        # Enforce unique name (case-insensitive)
+        if Community.objects.filter(name__iexact=name).exists():
+            messages.error(request, 'A community with that name already exists')
+            return redirect('community_list')
+
+        Community.objects.create(name=name, description=description, created_by=request.user)
+        messages.success(request, f'Community "{name}" created')
+        return redirect('community_list')
+
+    return render(request, 'community_create.html')
+
+
+@login_required
+def delete_community(request, community_id):
+    """Allow the community owner to delete a community.
+
+    GET: render a confirmation page.
+    POST: perform delete and redirect to community list.
+    """
+    community = get_object_or_404(Community, id=community_id)
+
+    # Only community creator can delete the community
+    if request.user != community.created_by:
+        messages.error(request, "You don't have permission to delete this community")
+        return redirect('community_detail', community_id=community.id)
+
+    if request.method == 'POST':
+        community.delete()
+        messages.success(request, 'Community deleted')
+        return redirect('community_list')
+
+    return render(request, 'confirm_delete_community.html', {'community': community})
