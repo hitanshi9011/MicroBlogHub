@@ -49,6 +49,22 @@ urlpatterns = [
 	path('notifications/dropdown/', views.notification_dropdown, name='notification_dropdown'),
 	path('notifications/<int:id>/redirect/', views.notification_redirect, name='notification_redirect'),
 
+    # Community URLs
+    path('communities/', views.community_list, name='community_list'),
+    path('communities/create/', views.create_community, name='create_community'),
+    path('communities/<int:community_id>/', views.community_detail, name='community_detail'),
+    path('communities/<int:community_id>/post/<int:post_id>/delete/', views.delete_community_post, name='delete_community_post'),
+    path('communities/<int:community_id>/post/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
+    path('communities/<int:community_id>/comment/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
+    path('communities/<int:community_id>/delete/', views.delete_community, name='delete_community'),
+    path('communities/join/<int:community_id>/', views.join_community, name='join_community'),
+    path('communities/leave/<int:community_id>/', views.leave_community, name='leave_community'),
+    path(
+    "community/post/<int:post_id>/like/",
+    views.toggle_community_like,
+    name="toggle_community_like"
+),
+
 	# Messages
 	path('messages/', views.messages_list, name='messages'),
 	path('messages/<str:username>/', views.conversation, name='conversation'),

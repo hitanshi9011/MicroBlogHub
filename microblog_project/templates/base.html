@@ -214,47 +214,7 @@
         }
 
         
-    .notification-wrapper {
-        position: relative;
-    }
-    
-    .notification-bell {
-        background: none;
-        border: none;
-        font-size: 22px;
-        cursor: pointer;
-        position: relative;
-        z-index: 2000;
-        pointer-events: auto;
-    }
-    
-    .notification-bell:hover {
-        transform: scale(1.1);
-    }
-    
-    .notification-count {
-        position: absolute;
-        top: -6px;
-        right: -8px;
-        background: red;
-        color: white;
-        font-size: 12px;
-        padding: 2px 6px;
-        border-radius: 50%;
-    }
-    
-    .notification-popup {
-        position: absolute;
-        top: 45px;
-        right: 0;
-        width: 320px;
-        background: white;
-        color: black;
-        border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        z-index: 3000;
-        display: none;
-    }
+   
 
     
         
@@ -280,11 +240,19 @@
                 </a>
                 <div class="notification-wrapper">
 
-                <button id="notificationBell" class="notification-bell" type="button">
-                    🔔
-                {% if unread_notifications_count > 0 %}
-                    <span class="notification-count">{{ unread_notifications_count }}</span></button>
-                {% endif %}
+                    <button id="notificationBell" class="notification-bell" type="button">
+                        🔔
+                        {% if unread_notifications_count > 0 %}
+                            <span class="notification-count">{{ unread_notifications_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div id="notificationPopup" class="notification-popup"></div>
+                </div>
+                
+
+
+
+                    
                 </div>
                 <form method="GET" action="{% url 'search' %}" class="nav-search-form" role="search" aria-label="Site search">
                     <input name="q" type="search" class="nav-search-input" placeholder="Search @users, #tags, keywords or trending" value="{{ request.GET.q|default_if_none:'' }}" aria-label="Search">
@@ -310,7 +278,6 @@
 
             </div>
         </div>
-
     </nav>
 
     <!-- MAIN CONTENT -->
@@ -343,6 +310,33 @@
         </form>
       </div>
     </div>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const messages = document.querySelectorAll(".messages-container > div");
+        
+            messages.forEach(message => {
+                // auto hide after 4 seconds
+                setTimeout(() => {
+                    message.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+                    message.style.opacity = "0";
+                    message.style.transform = "translateY(-10px)";
+        
+                    // remove from DOM after animation
+                    setTimeout(() => {
+                        message.remove();
+                    }, 400);
+                }, 4000); // ✅ 4 seconds
+            });
+        });
+        </script>
+
+
+
+
+    
+        
 
 </body>
 </html>

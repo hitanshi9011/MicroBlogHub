@@ -316,17 +316,19 @@ a:hover {
 /* Popup */
 .notification-popup {
     position: absolute;
-    top: 45px;
-    right: 0;
-    width: 320px;
+    top: 48px;              /* below bell */
+    right: 0;               /* 🔥 align to right */
+    width: 340px;
+
     background: #0f172a;
-    color: #e5e7eb;
     border-radius: 12px;
     border: 1px solid #334155;
     box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+
     z-index: 10052;
     display: none;
 }
+
 
 /* Show popup */
 .notification-popup.show {
@@ -342,7 +344,7 @@ a:hover {
 
 .notification-item {
     padding: 10px;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid #072b65;
 }
 
 .notification-item:last-child {
@@ -350,19 +352,23 @@ a:hover {
 }
 
 .notification-item:hover {
-    background: rgba(79, 70, 229, 0.15);
+    background: rgba(133, 177, 45, 0.15);
     border-radius: 8px;
 }
 
 .notification-text {
     font-size: 14px;
-    color: #e5e7eb;
+    color: #e5e7eb;                /* 🔥 visible text */
+    line-height: 1.4;
 }
 
 .notification-time {
+    display: block;                /* 🔥 force new line */
+    margin-top: 4px;
     font-size: 12px;
-    color: #94a3b8;
+    color: #94a3b8;                /* 🔥 timestamp visible */
 }
+
 
 .no-notifications {
     text-align: center;
@@ -398,18 +404,7 @@ a:hover {
         border-radius: 50%;
     }
     
-    .notification-popup {
-        position: absolute;
-        top: 45px;
-        right: 0;
-        width: 320px;
-        background: white;
-        color: black;
-        border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        z-index: 3000;
-        display: none;
-    }
+   
 
     
 
@@ -916,4 +911,159 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     padding: 1.25rem;
     border-radius: 12px;
     border: 1px solid rgba(148,163,184,0.04);
+}
+
+
+.messages-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+}
+
+.messages-container .success {
+    background-color: #6fb78a;
+    color: #ffffff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.notification-body {
+    display: none;
+    position: absolute;
+    top: 70px;
+    right: 2rem;
+    width: 320px;
+    background: #0f172a;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    z-index: 3000;
+}
+.back-link {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    color: #9aa4ff;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+.join-btn {
+    padding: 6px 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #6a5cff, #8a7cff);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.joined-badge {
+    padding: 6px 12px;
+    border-radius: 16px;
+    background: rgba(0,255,150,0.15);
+    color: #00ffa6;
+    font-size: 0.8rem;
+    margin-right: 6px;
+}
+
+.leave-btn {
+    color: #ff6b6b;
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+
+/* Top creators row */
+.top-creator-row {
+  align-items: center;
+}
+
+/* Inline layout */
+.person-main-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Username + badge on same line */
+.username-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Username */
+.username-link {
+  font-weight: 600;
+  color: #e6e6ff;
+  text-decoration: none;
+  display: flex;
+  font-size: 13.5px;
+}
+
+.username-link:hover {
+  text-decoration: underline;
+}
+
+
+/* Level colors */
+.level-beginner {
+  background: #2e7d32;
+  color: #c8facc;
+}
+
+.level-rising-creator {
+  background: #3949ab;
+  color: #e3e7ff;
+}
+
+.level-influencer {
+  background: #7b1fa2;
+  color: #f3d9ff;
+}
+
+.level-top-creator {
+  background: #fb8c00;
+  color: #fff3e0;
+}
+
+.level-elite-creator {
+  background: linear-gradient(135deg, gold, orange);
+  color: #1a1a1a;
+}
+
+
+/* Follow button smaller */
+.follow-chip.small {
+  font-size: 11px;
+  padding: 4px 10px;
+  margin-top: 2px;
+}
+
+/* Prevent form breaking layout */
+.inline-form {
+  display: inline-block;
+}
+.score-text {
+  font-size: 11px;
+  color: #9aa4ff;
+  margin-left: 4px;
+}
+
+.rank-icon {
+  font-size: 14px;
+}
+
+.rank-number {
+  font-size: 11px;
+  color: #9aa4ff;
+}
+
+.level-badge {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-weight: 600;
 }

@@ -46,28 +46,62 @@
     </section>
 
     <section class="people-section">
-      <h3>People</h3>
+      <h3>🏆 Top Creators</h3>
 
-      {% for u in users %}
-      <div class="person-row">
-        <div class="avatar">{{ u.username|first|upper }}</div>
-        <div class="person-main">
-          <strong>{{ u.username }}</strong>
+     {% for p in top_creators %}
+    <div class="person-row top-creator-row">
+
+      <!-- Avatar -->
+      <div class="avatar">
+        {{ p.user.username|first|upper }}
+      </div>
+
+      <!-- Username + level + follow -->
+      <div class="person-main-inline">
+
+        <div class="username-line">
+          <a href="{% url 'profile' p.user.username %}" class="username-link">
+            {{ p.user.username }}
+          </a>
+
+          {% if forloop.first %}
+            <span class="rank-icon">👑</span>
+          {% else %}
+            <span class="rank-number">#{{ forloop.counter }}</span>
+          {% endif %}
+
+          <span class="level-badge level-{{ p.level|slugify }}">
+            {{  p.level }}
+          </span>
+
         </div>
 
-        {% if u.id in following_ids %}
-          <form method="POST" action="{% url 'unfollow_user' u.id %}" style="display:inline;" class="ajax-follow">
-            {% csrf_token %}
-            <button type="submit" class="follow-chip">Unfollow</button>
-          </form>
-        {% else %}
-          <form method="POST" action="{% url 'follow_user' u.id %}" style="display:inline;" class="ajax-follow">
-            {% csrf_token %}
-            <button type="submit" class="follow-chip">Follow</button>
-          </form>
+        {% if request.user != p.user %}
+          {% if p.user.id in following_ids %}
+            <form method="POST"
+                  action="{% url 'unfollow_user' p.user.id %}"
+                  class="ajax-follow inline-form">
+              {% csrf_token %}
+              <button type="submit" class="follow-chip small">Unfollow</button>
+            </form>
+          {% else %}
+            <form method="POST"
+                  action="{% url 'follow_user' p.user.id %}"
+                  class="ajax-follow inline-form">
+              {% csrf_token %}
+              <button type="submit" class="follow-chip small">Follow</button>
+            </form>
+          {% endif %}
         {% endif %}
+
       </div>
-      {% endfor %}
+    </div>
+
+  {% empty %}
+    <p>No creators yet</p>
+
+  {% endfor %}
+
     </section>
 
 </aside>
@@ -139,3 +173,4 @@
   });
 })();
 </script>
+
