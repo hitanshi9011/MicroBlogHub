@@ -204,16 +204,6 @@ def home(request):
 def profile(request, username):
     profile_user = get_object_or_404(User, username=username)
 
-    posts = (
-        Post.objects
-        .filter(user=profile_user)
-        .select_related('user')
-        .annotate(
-            like_count=Count('like', distinct=True),
-            comment_count=Count('comment', distinct=True)
-        )
-        .order_by('-created_at')
-    )
     # Show drafts only to the profile owner
     if request.user == profile_user:
         posts_qs = Post.objects.filter(user=profile_user)
@@ -236,20 +226,12 @@ def profile(request, username):
             following=profile_user
         ).exists()
 
+    # ✅ THIS IS ALL YOU NEED
     profile, _ = Profile.objects.get_or_create(user=profile_user)
-
-    photo_url = None
-    try:
-        if profile.photo and getattr(profile.photo, 'name', None):
-            if default_storage.exists(str(profile.photo.name)):
-                photo_url = profile.photo.url
-    except Exception:
-        pass
 
     context = {
         'profile_user': profile_user,
-        'profile': profile,
-        'photo_url': photo_url,
+        'profile': profile,      # ✅ template uses this
         'posts': posts,
         'posts_count': posts_count,
         'followers_count': followers_count,
@@ -258,7 +240,6 @@ def profile(request, username):
     }
 
     return render(request, 'core/profile.html', context)
-
 
 # =========================
 # AUTH
@@ -1084,7 +1065,9 @@ def community_detail(request, community_id):
                     text=text
                 )
 
-            return redirect("community_detail", community_id=community.id)
+                return redirect(f"/communities/{community.id}/#comments-{post_id}")
+
+
 
     # ================= FETCH POSTS =================
     posts = (
@@ -1234,4 +1217,11 @@ def toggle_community_like(request, post_id):
 
     return redirect('community_detail', community_id=post.community.id)
 
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
+from .models import Profile, Post
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
+from .models import Profile, Post
 

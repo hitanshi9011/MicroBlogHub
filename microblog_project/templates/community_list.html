@@ -1,10 +1,21 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Communities | MicroBlogHub{% endblock %}
 
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/community.css' %}">
+
+
 <section class="container full-width community-listing">
+
+   <!-- BACK TO HOME -->
+   <div style="margin-bottom: 1rem;">
+    <a href="{% url 'home' %}">← Back to Home</a>
+  </div>
   <h1>Communities</h1>
   <p>Explore communities and join the conversation.</p>
+     
 
   {% if request.user.is_authenticated %}
     <p>
@@ -18,60 +29,65 @@
     </p>
   {% endif %}
 
-  <ul class="community-list">
+  <div class="community-grid">
+
     {% for c in communities %}
-      <li class="community-item post">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
-
-          <!-- LEFT CONTENT -->
-          <div>
-            <a href="{% url 'community_detail' c.id %}">
-              <strong>{{ c.name }}</strong>
-            </a>
-
-            <p>{{ c.description|default:"No description" }}</p>
-
-            <small>
-              Created by:
-              {% if c.created_by %}
-                {{ c.created_by.username }}
-              {% else %}
-                system
-              {% endif %}
-            </small>
-          </div>
-
-          <!-- RIGHT ACTIONS -->
-          <div>
-            {% if request.user.is_authenticated %}
-
-              {% if c.created_by and request.user == c.created_by %}
-                <!-- DELETE (creator only) -->
-                <form method="POST"
-                      action="{% url 'delete_community' c.id %}"
-                      style="display:inline;"
-                      onsubmit="return confirm('Delete this community?');">
-                  {% csrf_token %}
-                  <button type="submit"
-                          class="icon-btn"
-                          title="Delete community">
-                    🗑️
-                  </button>
-                </form>
-              {% endif %}
-
-              {% if request.user in c.members.all %}
-                <span class="joined-badge">Joined</span>
-              {% endif %}
-
-            {% endif %}
-          </div>
-
-        </div>
-      </li>
+    <div class="community-card">
+  
+      <!-- Header -->
+      <div class="community-card-header">
+        <a href="{% url 'community_detail' c.id %}" class="community-title">
+          {{ c.name }}
+        </a>
+  
+        {% if request.user in c.members.all %}
+          <span class="joined-badge">Joined</span>
+        {% endif %}
+      </div>
+  
+      <!-- Description -->
+      <p class="community-desc">
+        {{ c.description|default:"No description"|truncatechars:120 }}
+      </p>
+  
+      <!-- Footer -->
+      <div class="community-card-footer">
+        <span class="creator">
+          Created by:
+          {% if c.created_by %}
+            {{ c.created_by.username }}
+          {% else %}
+            system
+          {% endif %}
+        </span>
+  
+        <a href="{% url 'community_detail' c.id %}" class="open-btn">
+          Open →
+        </a>
+      </div>
+  
+      {% if request.user.is_authenticated and request.user == c.created_by %}
+        <form method="POST"
+              action="{% url 'delete_community' c.id %}"
+              onsubmit="return confirm('Delete this community?');"
+              class="delete-community-form">
+          {% csrf_token %}
+          <button type="submit" class="icon-btn">🗑️</button>
+        </form>
+      {% endif %}
+  
+    </div>
     {% empty %}
-      <li>No communities yet.</li>
+      <p>No communities yet.</p>
     {% endfor %}
-  </ul>
+  
+  </div>
+  
 </section>
+
+
 {% endblock %}
+
+
+
+

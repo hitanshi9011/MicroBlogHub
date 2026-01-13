@@ -99,21 +99,11 @@ class Message(models.Model):
     
 
 
-class Profile(models.Model):
-    user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        related_name='profile'
-    )
-    image = models.ImageField(
-        upload_to='profile_pics/',
-        blank=True,
-        null=True
-    )
-    bio = models.TextField(blank=True)
+from django.db import models
+from django.contrib.auth.models import User
 
-    def __str__(self):
-        return self.user.username
+from django.db import models
+from django.contrib.auth.models import User
 
 
 from django.db import models
@@ -219,20 +209,24 @@ class CommunityPostLike(models.Model):
     class Meta:
         unique_together = ("post", "user")
 
-
-
-
-
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    photo = models.ImageField(upload_to='profile_photos/', default='profile_photos/default.png', blank=True, null=True)
-    bio = models.TextField(max_length=160, blank=True, default='')
+    photo = models.ImageField(
+        upload_to='profile_photos/',
+        blank=True,
+        null=True
+    )
+    bio = models.TextField(max_length=160, blank=True)
 
     def __str__(self):
         return self.user.username
 
-@property
-def photo_url(self):
-    if self.photo:
-        return self.photo.url
-    return '/static/images/default.png'
+    @property
+    def photo_url(self):
+        if self.photo:
+            return self.photo.url
+        return '/static/images/default_avatar.svg'
+
+
+
+

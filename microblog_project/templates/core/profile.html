@@ -6,274 +6,188 @@
 {% block content %}
 
 <div class="profile-container">
+
     <!-- Profile Cover & Header -->
     <div class="profile-cover-section">
         <div class="profile-cover">
             <div class="cover-gradient"></div>
             <div class="cover-pattern"></div>
         </div>
-        
+
         <div class="profile-header-wrapper">
             <div class="profile-header-card">
+
+                <!-- AVATAR -->
                 <div class="profile-avatar-container">
                     <div class="profile-avatar-large">
-                        {% if photo_url %}
-                            <img src="{{ photo_url }}"
-                                 alt="{{ profile_user.username }} profile photo"
-                                 style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                        {% else %}
-                            <img src="{% static 'images/default_avatar.svg' %}" alt="default avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                        {% endif %}
+                        {% if profile.photo %}
+                        <img src="{{ profile.photo.url }}"
+                             alt="{{ profile_user.username }}"
+                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+                    {% else %}
+                        <img src="{% static 'images/default_avatar.svg' %}"
+                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+                    {% endif %}
+                     
                     </div>
                     <div class="avatar-ring"></div>
+
                     {% if user.is_authenticated and user == profile_user %}
-                        <div class="avatar-badge">
-                            <span>You</span>
-                        </div>
+                        <div class="avatar-badge"><span>You</span></div>
                     {% endif %}
                 </div>
-                
-                <div class="profile-info">
-                    <div class="profile-name-section">
-                        <h1 class="profile-username">@{{ profile_user.username }}</h1>
-                        {% if user.is_authenticated and user == profile_user %}
-                            <span class="profile-badge verified">✓ Verified</span>
-                        {% endif %}
-                    </div>
-                    <!-- Small centered avatar above the stats to ensure visibility -->
-                    <div class="profile-header-mini-avatar">
-                        {% if profile.photo %}
-                            <img src="{{ profile.photo.url }}" class="profile-avatar-mini">
-                        {% else %}
-                            <div class="profile-mini-initial">{{ profile_user.username|first|upper }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="profile-bio">
-                        {% if profile.bio %}
-                            <p>{{ profile.bio }}</p>
-                        {% else %}
-                            <p>Welcome to my profile! 🚀</p>
-                        {% endif %}
-                    </div>
-                    
-                   
-                    <div class="profile-stats">
 
+                <!-- PROFILE INFO -->
+                <!-- PROFILE INFO -->
+<div class="profile-info">
 
+    <!-- 🔴 TEMP DEBUG LINE (ADD THIS HERE) -->
+   
 
-    <a href="{% url 'user_posts' profile_user.username %}" class="stat-item">
-        <div class="stat-icon">📝</div>
-        <div class="stat-content">
-        <div class="stat-number" data-count="{{ posts.count|default:0 }}">{{ posts_count }}</div>
-            <div class="stat-label">Posts</div>
-        </div>
-    </a>
+    <div class="profile-name-section">
+        <h1 class="profile-username">@{{ profile_user.username }}</h1>
+        {% if user.is_authenticated and user == profile_user %}
+            <span class="profile-badge verified">✓ Verified</span>
+        {% endif %}
+    </div>
 
-    <a href="{% url 'followers' profile_user.username %}" class="stat-item">
-        <div class="stat-icon">👥</div>
-        <div class="stat-content">
-           <div class="stat-number" data-count="{{ followers_count|default:0 }}">{{ followers_count }}</div>
-            <div class="stat-label">Followers</div>
-        </div>
-    </a>
+    <div class="profile-bio">
+        <p>Welcome to my profile! 🚀</p>
 
-    <a href="{% url 'following' profile_user.username %}" class="stat-item">
-        <div class="stat-icon">🔗</div>
-        <div class="stat-content">
-          <div class="stat-number" data-count="{{ following_count|default:0 }}">{{ following_count }}</div>
-            <div class="stat-label">Following</div>
-        </div>
-    </a>
-                    </div>
+        {% if profile.bio %}
+            <p class="profile-bio-text">{{ profile.bio }}</p>
+        {% endif %}
+    </div>
+
 </div>
 
 
-{% if user.is_authenticated and user != profile_user %}
+                    <!-- STATS -->
+                    <div class="profile-stats">
+                        <a href="{% url 'user_posts' profile_user.username %}" class="stat-item">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ posts_count }}</div>
+                                <div class="stat-label">Posts</div>
+                            </div>
+                        </a>
+
+                        <a href="{% url 'followers' profile_user.username %}" class="stat-item">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ followers_count }}</div>
+                                <div class="stat-label">Followers</div>
+                            </div>
+                        </a>
+
+                        <a href="{% url 'following' profile_user.username %}" class="stat-item">
+                            <div class="stat-icon">🔗</div>
+                            <div class="stat-content">
+                                <div class="stat-number">{{ following_count }}</div>
+                                <div class="stat-label">Following</div>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- ACTIONS -->
+                    {% if user.is_authenticated and user != profile_user %}
                         <div class="profile-actions">
-  {% if is_following %}
-                                <form method="POST" action="{% url 'unfollow' profile_user.id %}" style="display:inline;">
+                            {% if is_following %}
+                                <form method="POST" action="{% url 'unfollow' profile_user.id %}">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-follow btn-unfollow">
-                                        <span class="btn-icon">✓</span>
-                                        <span>Following</span>
+                                        ✓ Following
                                     </button>
                                 </form>
-  {% else %}
-                                <form method="POST" action="{% url 'follow' profile_user.id %}" style="display:inline;">
+                            {% else %}
+                                <form method="POST" action="{% url 'follow' profile_user.id %}">
                                     {% csrf_token %}
                                     <button type="submit" class="btn-follow">
-                                        <span class="btn-icon">+</span>
-                                        <span>Follow</span>
+                                        + Follow
                                     </button>
                                 </form>
-  {% endif %}
+                            {% endif %}
+
                             <a href="{% url 'conversation' profile_user.username %}" class="btn-secondary">
-                                <span class="btn-icon">💬</span>
-                                <span>Message</span>
+                                💬 Message
                             </a>
                         </div>
+
                     {% elif user.is_authenticated and user == profile_user %}
                         <div class="profile-actions">
                             <a href="{% url 'edit_profile' %}" class="btn-secondary">
-                                <span class="btn-icon">✏️</span>
-                                <span>Edit Profile</span>
+                                ✏️ Edit Profile
                             </a>
                         </div>
-{% endif %}
-<form method="POST" action="{% url 'delete_account' %}">
-  {% csrf_token %}
-  <button type="submit" class="danger-btn"
-          onclick="return confirm('Are you sure you want to delete your account? This cannot be undone.')">
-    Delete Account
-  </button>
-</form>
+                    {% endif %}
 
-                </div>
-            </div>
+                </div> <!-- profile-info -->
+            </div> <!-- profile-header-card -->
+        </div> <!-- profile-header-wrapper -->
+    </div> <!-- profile-cover-section -->
+
+    <!-- DELETE ACCOUNT (FIXED POSITION) -->
+    {% if user.is_authenticated and user == profile_user %}
+    <form method="POST" action="{% url 'delete_account' %}">
+        {% csrf_token %}
+        <div class="delete-wrapper">
+            <button type="submit" class="btn-danger"
+              onclick="return confirm('Are you sure you want to delete your account? This cannot be undone.')">
+              Delete Account
+            </button>
         </div>
-    </div>
+    </form>
+    {% endif %}
 
-    <!-- Posts Section -->
+    <!-- POSTS SECTION -->
     <div class="profile-posts-section">
         <div class="section-header">
             <h2 class="section-title">
-                <span class="section-icon">📝</span>
-                <span>Posts</span>
-                <span class="post-count-badge">{{ posts.count }}</span>
+                📝 Posts <span class="post-count-badge">{{ posts_count }}</span>
             </h2>
-            <div class="section-filters">
-                <button class="filter-btn active" data-filter="all">All</button>
-                <button class="filter-btn" data-filter="recent">Recent</button>
-                <button class="filter-btn" data-filter="popular">Popular</button>
-            </div>
         </div>
 
         {% if posts %}
             <div class="profile-posts-list">
                 {% for post in posts %}
-                    <article class="profile-post-card" data-post-id="{{ post.id }}">
+                    <article class="profile-post-card">
+
                         <div class="post-card-header">
                             <div class="post-header-left">
                                 <div class="post-card-avatar">
-                                    {% if profile.photo %}
-                                        <img src="{{ profile.photo.url }}"
-                                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-                                    {% else %}
-                                        {{ profile_user.username|first|upper }}
-                                    {% endif %}
+                                    {{ profile_user.username|first|upper }}
                                 </div>
                                 <div class="post-card-meta">
                                     <a href="{% url 'profile' profile_user.username %}" class="post-card-author">
                                         @{{ profile_user.username }}
                                     </a>
                                     <div class="post-card-time">
-                                        <span class="time-icon">🕐</span>
-                                        <span>{{ post.created_at|timesince }} ago</span>
+                                        🕐 {{ post.created_at|timesince }} ago
                                     </div>
                                 </div>
                             </div>
-                            <div class="post-header-actions">
-                                <button class="post-action-btn" data-post-id="{{ post.id }}" onclick="sharePost(this.dataset.postId)" title="Share">
-                                    <span>🔗</span>
-                                </button>
-                                {% if user.is_authenticated and user == post.user %}
-                                  <a href="{% url 'edit_post' post.id %}" class="post-action-btn" title="Edit">✏️</a>
-                                  <button type="button" class="post-action-btn delete-btn" data-delete-url="{% url 'delete_post' post.id %}" data-post-content="{{ post.content|escapejs }}" title="Delete">🗑️</button>
-                                {% endif %}
-                            </div>
                         </div>
-                        
+
                         <div class="post-card-body">
-    <a href="{% url 'post_detail' post.id %}" class="profile-post-link"><p>{{ post.content|urlize|linebreaksbr }}</p></a>
+                            <p>{{ post.content|urlize|linebreaksbr }}</p>
                         </div>
 
                         <div class="post-card-footer">
-                            <div class="post-engagement">
-                                <div class="engagement-item like-item" data-likes="{{ post.like_count }}">
-                                    <span class="engagement-icon">❤️</span>
-                                    <span class="engagement-count">{{ post.like_count }}</span>
-                                </div>
-                                <div class="engagement-item comment-item">
-                                    onclick="MicroBolgHub.toggleProfileComments({{ post.id }})">
-                                    <span class="engagement-icon">💬</span>
-                                    <span class="engagement-count">{{ post.comment_count }}</span>
-                                </div>
-                               
-
-</div>
-
-                                <div class="engagement-item share-item">
-                                    <span class="engagement-icon">🔗</span>
-                                    <span class="engagement-count">Share</span>
-                                </div>
-                            </div>
-  </div>
-  <!-- PROFILE COMMENTS SECTION -->
-<div class="profile-comments-section"
-id="profile-comments-{{ post.id }}"
-style="display: none; margin-top: 1rem;">
-
-{% if post.comment_set.count > 0 %}
-{% for comment in post.comment_set.all %}
- <div class="comment-item" style="margin-bottom: 0.75rem;">
-   <div class="comment-avatar">
-     {{ comment.user.username|first|upper }}
-   </div>
-   <div class="comment-content">
-     <strong>{{ comment.user.username }}</strong>
-     <span class="comment-time">
-       · {{ comment.created_at|timesince }} ago
-     </span>
-     <div class="comment-text">{{ comment.text }}</div>
-   </div>
- </div>
-{% endfor %}
-{% else %}
-<p style="color: var(--text-soft); font-size: 0.9rem;">
- No comments yet
-</p>
-{% endif %}
-
-{% if user.is_authenticated %}
-<form method="SENT"
-   action="{% url 'add_comment' post.id %}"
-   style="margin-top: 0.75rem;">
-{% csrf_token %}
-<input type="text"
-      name="comment"
-      placeholder="Write a comment..."
-      required
-      style="width: 100%; padding: 0.6rem; border-radius: 10px;">
-</form>
-{% endif %}
-</div>
+                            ❤️ {{ post.like_count }} · 💬 {{ post.comment_count }}
+                        </div>
 
                     </article>
-{% endfor %}
+                {% endfor %}
             </div>
         {% else %}
             <div class="empty-state">
-                <div class="empty-animation">
-                    <div class="empty-icon">📭</div>
-                    <div class="empty-particles">
-                        <span></span><span></span><span></span>
-                    </div>
-                </div>
                 <h3>No posts yet</h3>
-                <p>This user hasn't shared anything yet. Check back later!</p>
-                {% if user.is_authenticated and user == profile_user %}
-                    <a href="{% url 'home' %}" class="empty-action-btn">
-                        <span>Create Your First Post</span>
-                        <span>→</span>
-                    </a>
-                {% endif %}
+                <p>This user hasn't shared anything yet.</p>
             </div>
         {% endif %}
     </div>
+
 </div>
-
-
 
 
 <style>
@@ -283,18 +197,19 @@ style="display: none; margin-top: 1rem;">
         padding: 0;
     }
 
-    /* Profile Cover Section */
     .profile-cover-section {
-        position: relative;
-        margin-bottom: 120px;
-    }
+    position: relative;
+    padding-bottom: 120px;  /* 👈 reserve space for profile card */
+}
+
+
 
     .profile-cover {
         height: 200px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
         border-radius: 0 0 24px 24px;
         position: relative;
-        overflow: hidden;
+        overflow: visible;
     }
 
     .cover-gradient {
@@ -324,8 +239,8 @@ style="display: none; margin-top: 1rem;">
 }
 
     .profile-header-wrapper {
-        position: absolute;
-        bottom: -80px;
+        position: relative;
+        bottom: -60px;
         left: 50%;
         transform: translateX(-50%);
         width: 100%;
@@ -341,7 +256,10 @@ style="display: none; margin-top: 1rem;">
         box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         animation: slideUp 0.6s ease-out;
         backdrop-filter: blur(10px);
+        
     }
+    
+
 
     @keyframes slideUp {
         from {
@@ -375,6 +293,7 @@ style="display: none; margin-top: 1rem;">
         position: relative;
         z-index: 2;
         transition: all 0.3s ease;
+        
     }
 
     .profile-avatar-large:hover {
@@ -415,8 +334,11 @@ style="display: none; margin-top: 1rem;">
     }
 
     .profile-info {
-        text-align: center;
-    }
+    text-align: center;
+    max-width: 520px;
+    margin: 0 auto;
+}
+
 
     .profile-name-section {
         display: flex;
@@ -451,15 +373,22 @@ style="display: none; margin-top: 1rem;">
         border: 1px solid var(--accent);
     }
 
-    .profile-bio {
-        margin-bottom: 1.5rem;
-        color: var(--text-soft);
-        font-size: 1rem;
-        max-width: 500px;
-        margin-left: auto;
-        margin-right: auto;
-    }
+    
 
+    .profile-bio {
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+    color: var(--text);
+}
+
+.profile-bio-text {
+    margin-top: 0.5rem;
+    color: #e5e7eb;   /* light gray */
+    font-weight: 500;
+}
+
+
+    
     .profile-stats {
         display: flex;
         justify-content: center;
@@ -476,6 +405,7 @@ style="display: none; margin-top: 1rem;">
         margin-bottom: 1rem;
     }
 
+  
     .profile-avatar-mini {
         width: 72px;
         height: 72px;
@@ -980,8 +910,10 @@ style="display: none; margin-top: 1rem;">
         }
 
         .profile-header-wrapper {
-            bottom: -60px;
-        }
+        margin-top: -30px;   /* ✅ ADD HERE */
+    }
+
+        
 
         .profile-header-card {
             padding: 1.5rem 1.5rem;
@@ -1033,9 +965,12 @@ style="display: none; margin-top: 1rem;">
         }
 
         .profile-header-wrapper {
-            bottom: -50px;
-        }
+        margin-top: -20px;   /* ✅ ADD HERE */
+    }
 
+
+
+        
         .profile-avatar-large {
             width: 80px;
             height: 80px;

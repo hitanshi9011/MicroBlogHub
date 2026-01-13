@@ -32,7 +32,7 @@ urlpatterns = [
     path('profile/<str:username>/posts/', views.user_posts, name='user_posts'),
     path('profile/<str:username>/followers/', views.followers_list, name='followers'),
     path('profile/<str:username>/following/', views.following_list, name='following'),
-
+    
 
     # Community URLs
     path('communities/', views.community_list, name='community_list'),
@@ -49,6 +49,8 @@ urlpatterns = [
     views.toggle_community_like,
     name="toggle_community_like"
 ),
+    
+    
 
 
     # FOLLOW

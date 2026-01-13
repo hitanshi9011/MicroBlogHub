@@ -5,6 +5,27 @@
 {% endblock %}
 
 {% block content %}
+<!-- BACK TO COMMUNITIES -->
+<div style="
+    position: sticky;
+    top: 70px;               /* stays below navbar */
+    margin-bottom: 1rem;
+    z-index: 10;
+">
+  <a href="{% url 'community_list' %}"
+     style="
+        display:inline-flex;
+        align-items:center;
+        gap:0.4rem;
+        font-size:0.95rem;
+        font-weight:600;
+        color:#a78bfa;
+        text-decoration:none;
+     ">
+    ← Back to Communities
+  </a>
+</div>
+
 
 <section class="container full-width community-detail">
 
@@ -142,24 +163,24 @@ style="display:none; margin-top:0.75rem;">
 {% endfor %}
 
 {% if request.user.is_authenticated and can_post %}
-<form method="POST" action="">
- {% csrf_token %}
- <input type="hidden" name="action" value="comment">
- <input type="hidden" name="post_id" value="{{ post.id }}">
+<form method="POST"
+      action="{% url 'community_detail' community.id %}">
+  {% csrf_token %}
 
- <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-   <input type="text"
-          name="comment"
-          placeholder="Write a comment..."
-          required>
-   <button type="submit">Reply</button>
- </div>
+  <input type="hidden" name="action" value="comment">
+  <input type="hidden" name="post_id" value="{{ post.id }}">
+
+  <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+    <input type="text"
+           name="comment"
+           placeholder="Write a comment..."
+           required>
+    <button type="submit">Reply</button>
+  </div>
 </form>
 {% endif %}
+
 </div>
-
-        
-
           
       </div>
     </article>
@@ -188,19 +209,21 @@ style="display:none; margin-top:0.75rem;">
 </script>
 
       
-      
+<script>
+  window.addEventListener("DOMContentLoaded", () => {
+    if (window.location.hash.startsWith("#comments-")) {
+      const el = document.querySelector(window.location.hash);
+      if (el) {
+        el.style.display = "block";
+      }
+    }
+  });
+</script>
+     
     
 
 
-    <script>
-      window.addEventListener("DOMContentLoaded", () => {
-        const hash = window.location.hash;
-        if (hash.startsWith("#comments-")) {
-          const el = document.querySelector(hash);
-          if (el) el.style.display = "block";
-        }
-      });
-    </script>
+    
     
       
 
