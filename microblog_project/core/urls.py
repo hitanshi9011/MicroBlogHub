@@ -42,6 +42,14 @@ urlpatterns = [
     path('communities/<int:community_id>/post/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
     path('communities/<int:community_id>/comment/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
     path('communities/<int:community_id>/delete/', views.delete_community, name='delete_community'),
+    path('communities/join/<int:community_id>/', views.join_community, name='join_community'),
+    path('communities/leave/<int:community_id>/', views.leave_community, name='leave_community'),
+    path(
+    "community/post/<int:post_id>/like/",
+    views.toggle_community_like,
+    name="toggle_community_like"
+),
+
 
     # FOLLOW
     path('follow/<int:user_id>/', views.follow_user, name='follow'),

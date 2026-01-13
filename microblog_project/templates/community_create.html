@@ -3,6 +3,11 @@
 
 {% block content %}
 <section class="container full-width community-create">
+
+  <a href="{% url 'home' %}" class="back-link">
+    ← Back to Home
+  </a>
+
   <h1>Create a Community</h1>
       <form method="POST" action="">
         {% csrf_token %}

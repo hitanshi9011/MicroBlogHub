@@ -23,6 +23,10 @@ from django.utils.text import get_valid_filename
 from django.http import HttpResponseForbidden
 from django.core.files.storage import default_storage
 from django.templatetags.static import static
+from .models import Community, CommunityPost
+from .models import CommunityPostLike
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,7 @@ from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 from collections import Counter
 import re
+from .models import CommunityPostLike
 
 from .models import (
     Post,
@@ -534,11 +539,13 @@ def like_post(request, post_id):
 @login_required
 def unlike_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    Like.objects.filter(recipient=request.user, post=post).delete()
-    return redirect('home')
-    Like.objects.filter(user=request.user, post=post).delete()
-    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
+    Like.objects.filter(
+        user=request.user,   # ✅ correct field
+        post=post
+    ).delete()
+
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 # =========================
 # COMMENTS
@@ -581,6 +588,30 @@ def delete_comment(request, comment_id):
         messages.error(request, 'Not allowed')
 
     return redirect('home')
+
+
+
+@login_required
+def join_community(request, community_id):
+    community = get_object_or_404(Community, id=community_id)
+    if not community.members.filter(id=request.user.id).exists():
+        community.members.add(request.user)
+    return redirect('community_detail', community_id=community.id)
+
+@login_required
+def leave_community(request, community_id):
+    community = get_object_or_404(Community, id=community_id)
+
+    # Prevent creator from leaving own community
+    if request.user == community.created_by:
+        messages.error(request, "Community creator cannot leave.")
+        return redirect('community_detail', community_id=community.id)
+
+    community.members.remove(request.user)
+    messages.success(request, "You left the community.")
+    return redirect('community_detail', community_id=community.id)
+
+
 
 
 from django.shortcuts import get_object_or_404, redirect
@@ -1001,44 +1032,82 @@ def community_list(request):
     context = {'communities': communities}
     return render(request, 'community_list.html', context)
 
-
+@login_required
 def community_detail(request, community_id):
     community = get_object_or_404(Community, id=community_id)
-    posts = community.posts.select_related('user').prefetch_related('comments').order_by('-created_at')
 
-    if request.method == 'POST':
-        if not request.user.is_authenticated:
-            messages.error(request, 'You must be logged in to post in a community')
-            return redirect('login')
+    is_creator = community.created_by == request.user
+    is_member = community.members.filter(id=request.user.id).exists()
+    can_post = is_creator or is_member
 
-        # support posting a community post or adding a comment
-        action = request.POST.get('action')
-        if action == 'post':
-            content = request.POST.get('content', '').strip()
+    has_posted = CommunityPost.objects.filter(
+        community=community,
+        user=request.user
+    ).exists()
+
+    # ================= HANDLE POST REQUEST =================
+    if request.method == "POST":
+
+        if not can_post:
+            return HttpResponseForbidden("You must join this community.")
+
+        action = request.POST.get("action")
+
+        # -------- CREATE POST --------
+        if action == "post":
+            content = request.POST.get("content", "").strip()
+
             if content:
                 CommunityPost.objects.create(
                     community=community,
                     user=request.user,
                     content=content
                 )
-                return redirect('community_detail', community_id=community.id)
-            else:
-                messages.error(request, 'Post content cannot be empty')
-        elif action == 'comment':
-            post_id = request.POST.get('post_id')
-            text = request.POST.get('comment', '').strip()
-            if post_id and text:
-                post = get_object_or_404(CommunityPost, id=post_id, community=community)
-                CommunityComment.objects.create(post=post, user=request.user, text=text)
-                return redirect('community_detail', community_id=community.id)
-            else:
-                messages.error(request, 'Comment text cannot be empty')
 
-    context = {
-        'community': community,
-        'posts': posts,
-    }
-    return render(request, 'community_detail.html', context)
+            return redirect("community_detail", community_id=community.id)
+
+        # -------- CREATE COMMENT --------
+        elif action == "comment":
+            post_id = request.POST.get("post_id")
+            text = request.POST.get("comment", "").strip()
+
+            if post_id and text:
+                post = get_object_or_404(
+                    CommunityPost,
+                    id=post_id,
+                    community=community
+                )
+
+                CommunityComment.objects.create(
+                    post=post,
+                    user=request.user,
+                    text=text
+                )
+
+            return redirect("community_detail", community_id=community.id)
+
+    # ================= FETCH POSTS =================
+    posts = (
+        community.posts
+        .select_related("user")
+        .prefetch_related("comments__user", "likes")
+        .order_by("-created_at")
+        if can_post else []
+    )
+
+    return render(request, "community_detail.html", {
+        "community": community,
+        "posts": posts,
+        "can_post": can_post,
+        "is_member": is_member,
+        "is_creator": is_creator,
+        "has_posted": has_posted,
+    })
+
+
+
+
+
 
 
 @login_required
@@ -1077,6 +1146,9 @@ def delete_community_comment(request, community_id, comment_id):
     comment.delete()
     messages.success(request, 'Comment deleted')
     return redirect('community_detail', community_id=community.id)
+
+
+
 
 
 @login_required
@@ -1145,3 +1217,21 @@ def delete_community(request, community_id):
         return redirect('community_list')
 
     return render(request, 'confirm_delete_community.html', {'community': community})
+
+
+
+@login_required
+def toggle_community_like(request, post_id):
+    post = get_object_or_404(CommunityPost, id=post_id)
+
+    like, created = CommunityPostLike.objects.get_or_create(
+        user=request.user,
+        post=post
+    )
+
+    if not created:
+        like.delete()
+
+    return redirect('community_detail', community_id=post.community.id)
+
+

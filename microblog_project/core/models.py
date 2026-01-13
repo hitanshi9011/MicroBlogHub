@@ -4,20 +4,6 @@ from django.conf import settings
 
 
 class Follow(models.Model):
-    follower = models.ForeignKey(User, related_name='following', on_delete=models.CASCADE)
-    following = models.ForeignKey(User, related_name='followers', on_delete=models.CASCADE)
-
-class Post(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
-    status = models.CharField(max_length=20, default="published")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-    def __str__(self):
-        return f"{self.user.username}: {self.content[:30]}"
-
-class Follow(models.Model):
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='following_set', on_delete=models.CASCADE)
     following = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='followers_set', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -53,23 +39,6 @@ class Post(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.status}"
 
-
-class Message(models.Model):
-    sender = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="sent_messages"
-    )
-    recipient = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name="received_messages"
-    )
-    content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.sender} → {self.recipient}"
 
 class Like(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -202,15 +171,20 @@ class Community(models.Model):
     description = models.TextField(blank=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='communities_created')
     created_at = models.DateTimeField(auto_now_add=True)
+    members = models.ManyToManyField(User, related_name="joined_communities", blank=True)
 
     def __str__(self):
         return self.name
 
 
 class CommunityPost(models.Model):
-    community = models.ForeignKey(Community, on_delete=models.CASCADE, related_name='posts')
+    community = models.ForeignKey(
+        Community,
+        related_name="posts",
+        on_delete=models.CASCADE
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(max_length=1000)
+    content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -218,13 +192,35 @@ class CommunityPost(models.Model):
 
 
 class CommunityComment(models.Model):
-    post = models.ForeignKey(CommunityPost, on_delete=models.CASCADE, related_name='comments')
+    post = models.ForeignKey(
+        CommunityPost,
+        related_name="comments",   # ✅ REQUIRED
+        on_delete=models.CASCADE
+    )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    text = models.TextField(max_length=500)
+    text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username} on {self.post.id} in {self.post.community.name}"
+    
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class CommunityPostLike(models.Model):
+    post = models.ForeignKey(
+        CommunityPost,
+        related_name="likes",      # ✅ REQUIRED
+        on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ("post", "user")
+
+
+
 
 
 class Profile(models.Model):
