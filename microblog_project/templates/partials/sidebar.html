@@ -48,60 +48,25 @@
     <section class="people-section">
       <h3>🏆 Top Creators</h3>
 
-     {% for p in top_creators %}
-    <div class="person-row top-creator-row">
-
-      <!-- Avatar -->
-      <div class="avatar">
-        {{ p.user.username|first|upper }}
-      </div>
-
-      <!-- Username + level + follow -->
-      <div class="person-main-inline">
-
-        <div class="username-line">
-          <a href="{% url 'profile' p.user.username %}" class="username-link">
-            {{ p.user.username }}
-          </a>
-
-          {% if forloop.first %}
-            <span class="rank-icon">👑</span>
-          {% else %}
-            <span class="rank-number">#{{ forloop.counter }}</span>
-          {% endif %}
-
-          <span class="level-badge level-{{ p.level|slugify }}">
-            {{  p.level }}
-          </span>
-
+      {% for p in top_creators %}
+      <a class="creator-row" href="{% url 'profile' p.user.username %}" title="@{{ p.user.username }}">
+        <div class="creator-avatar">
+          <img src="{{ p.photo_url }}" alt="{{ p.user.username }}" onerror="this.src='{% static 'images/default_avatar.svg' %}'" />
         </div>
-
-        {% if request.user != p.user %}
-          {% if p.user.id in following_ids %}
-            <form method="POST"
-                  action="{% url 'unfollow_user' p.user.id %}"
-                  class="ajax-follow inline-form">
-              {% csrf_token %}
-              <button type="submit" class="follow-chip small">Unfollow</button>
-            </form>
-          {% else %}
-            <form method="POST"
-                  action="{% url 'follow_user' p.user.id %}"
-                  class="ajax-follow inline-form">
-              {% csrf_token %}
-              <button type="submit" class="follow-chip small">Follow</button>
-            </form>
-          {% endif %}
-        {% endif %}
-
-      </div>
-    </div>
-
-  {% empty %}
-    <p>No creators yet</p>
-
-  {% endfor %}
-
+        <div class="creator-meta">
+          <div class="creator-top">
+            <strong class="creator-username">@{{ p.user.username }}</strong>
+            <span class="creator-badge" title="{{ p.badge_name }}">{{ p.badge_icon }} {{ p.badge_name }}</span>
+          </div>
+          <div class="creator-bottom">
+            <span class="creator-level">{{ p.level_label }}</span>
+            <span class="creator-score">• {{ p.reputation_score|floatformat:1 }}</span>
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div class="creator-empty">No creators yet — be the first to post quality content!</div>
+      {% endfor %}
     </section>
 
 </aside>

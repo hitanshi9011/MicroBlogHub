@@ -1,56 +1,30 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
-from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse, HttpResponseForbidden
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count
-from .models import Post, Follow
-from django.shortcuts import redirect, get_object_or_404
-from .models import Like
-from .models import Comment
-from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
-from .models import Post, Follow
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.template.loader import render_to_string
+
+import os
+import logging
+import re
+from collections import Counter
+from django.db import transaction, IntegrityError
+
+from .models import (
+    Post, Follow, Like, Comment, CommentLike,
+    Message, Notification, Community, CommunityPost,
+    CommunityComment, CommunityPostLike, Profile
+)
 from .forms import EditUserForm, ProfilePhotoForm
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from .models import Profile
-from django.conf import settings
-import os
-import logging
-import time
-from django.utils.text import get_valid_filename
-from django.http import HttpResponseForbidden
-from django.core.files.storage import default_storage
-from django.templatetags.static import static
-from .models import Community, CommunityPost
-from .models import CommunityPostLike
-
-
-
-logger = logging.getLogger(__name__)
-
-from django.db import transaction, IntegrityError
-from django.template.loader import render_to_string
-from django.contrib.auth import get_user_model
-from collections import Counter
-import re
-from .models import CommunityPostLike
-
-from .models import (
-    Post,
-    Follow,
-    Like,
-    Comment,
-    CommentLike,
-    Message,
-    Notification,
-    Community,
-    CommunityPost,
-    CommunityComment,
-)
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 def home(request):
     # =========================
@@ -97,8 +71,8 @@ def home(request):
             user__in=following_ids + [request.user.id],
             status='published'
         ).select_related('user').annotate(
-            like_count=Count('like', distinct=True),
-            comment_count=Count('comment', distinct=True)
+            like_count=Count('likes', distinct=True),
+            comment_count=Count('comments', distinct=True)
         ).order_by('-created_at')
 
         # People section
@@ -123,8 +97,8 @@ def home(request):
         posts = Post.objects.filter(
             status='published'
         ).select_related('user').annotate(
-            like_count=Count('like', distinct=True),
-            comment_count=Count('comment', distinct=True)
+            like_count=Count('likes', distinct=True),
+            comment_count=Count('comments', distinct=True)
         ).order_by('-created_at')
 
     # =========================
@@ -148,7 +122,7 @@ def home(request):
     trending_posts = Post.objects.filter(
         status='published'
     ).annotate(
-        like_count=Count('like')
+        like_count=Count('likes')
     ).select_related('user').order_by(
         '-like_count', '-created_at'
     )[:5]
@@ -209,8 +183,8 @@ def profile(request, username):
         .filter(user=profile_user)
         .select_related('user')
         .annotate(
-            like_count=Count('like', distinct=True),
-            comment_count=Count('comment', distinct=True)
+            like_count=Count('likes', distinct=True),
+            comment_count=Count('comments', distinct=True)
         )
         .order_by('-created_at')
     )
@@ -221,8 +195,8 @@ def profile(request, username):
         posts_qs = Post.objects.filter(user=profile_user, status='published')
 
     posts = posts_qs.select_related('user').annotate(
-        like_count=Count('like', distinct=True),
-        comment_count=Count('comment', distinct=True)
+        like_count=Count('likes', distinct=True),
+        comment_count=Count('comments', distinct=True)
     ).order_by('-created_at')
 
     posts_count = posts.count()
@@ -237,6 +211,13 @@ def profile(request, username):
         ).exists()
 
     profile, _ = Profile.objects.get_or_create(user=profile_user)
+
+    # likes/comments context for template (used to show liked state)
+    liked_posts = []
+    liked_comments = []
+    if request.user.is_authenticated:
+        liked_posts = list(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
+        liked_comments = list(CommentLike.objects.filter(user=request.user).values_list('comment_id', flat=True))
 
     photo_url = None
     try:
@@ -255,6 +236,8 @@ def profile(request, username):
         'followers_count': followers_count,
         'following_count': following_count,
         'is_following': is_following,
+        'liked_posts': liked_posts,
+        'liked_comments': liked_comments,
     }
 
     return render(request, 'core/profile.html', context)
@@ -266,8 +249,8 @@ def profile(request, username):
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post.objects.select_related('user').annotate(
-        like_count=Count('like', distinct=True),
-        comment_count=Count('comment', distinct=True)
+        like_count=Count('likes', distinct=True),
+        comment_count=Count('comments', distinct=True)
     ), id=post_id)
 
     # Prevent others from viewing drafts
@@ -290,7 +273,7 @@ def post_detail(request, post_id):
         for t in tags:
             hashtag_counter[t.lower()] += 1
     top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-    top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
+    top_posts = Post.objects.filter(status='published').annotate(like_count=Count('likes')).order_by('-like_count', '-created_at')[:5]
 
     context = {
         'post': post,
@@ -317,7 +300,7 @@ def search(request):
     elif q.lower() == 'trending' or q.lower() == '#trending':
         match_type = 'trending'
         # annotate with like counts and order by popularity
-        posts = Post.objects.annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:50]
+        posts = Post.objects.annotate(like_count=Count('likes')).order_by('-like_count', '-created_at')[:50]
     elif q.startswith('@'):
         match_type = 'user'
         username = q[1:]
@@ -342,8 +325,8 @@ def search(request):
     # annotate and select_related for better performance (avoid N+1 queries in templates)
     # Only show published posts in search results
     posts = posts.filter(status='published').select_related('user').annotate(
-        like_count=Count('like', distinct=True),
-        comment_count=Count('comment', distinct=True)
+        like_count=Count('likes', distinct=True),
+        comment_count=Count('comments', distinct=True)
     )
 
     liked_posts = []
@@ -367,7 +350,7 @@ def search(request):
         for t in tags:
             hashtag_counter[t.lower()] += 1
     top_hashtags = [h for h,c in hashtag_counter.most_common(8)]
-    top_posts = Post.objects.filter(status='published').annotate(like_count=Count('like')).order_by('-like_count', '-created_at')[:5]
+    top_posts = Post.objects.filter(status='published').annotate(like_count=Count('likes')).order_by('-like_count', '-created_at')[:5]
 
     context = {
         'posts': posts,
@@ -560,34 +543,22 @@ def unfollow_user(request, user_id):
 def like_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
-    Like.objects.get_or_create(
-        user=request.user,
-        post=post
-    )
-
-    if post.user != request.user:
-       Notification.objects.create(
-    sender=request.user,
-    recipient=post.user,
-    notification_type='like',
-    post=post
-)
-
-
-    return redirect('home')
-    Like.objects.get_or_create(user=request.user, post=post)
+    like, created = Like.objects.get_or_create(user=request.user, post=post)
+    if created and post.user != request.user:
+        Notification.objects.create(
+            sender=request.user,
+            recipient=post.user,
+            notification_type='like',
+            post=post
+        )
+    # Prefer returning to referring page, fallback to home
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 
 @login_required
 def unlike_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-
-    Like.objects.filter(
-        user=request.user,   # ✅ correct field
-        post=post
-    ).delete()
-
+    Like.objects.filter(user=request.user, post=post).delete()
     return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 # =========================
@@ -610,13 +581,13 @@ def add_comment(request, post_id):
 
             if post.user != request.user:
                 Notification.objects.create(
-    sender=request.user,
-    recipient=post.user,
-    notification_type='comment',
-    post=post
-)
+                    sender=request.user,
+                    recipient=post.user,
+                    notification_type='comment',
+                    post=post
+                )
 
-
+    # Redirect back to the page that submitted the comment (profile, post detail, home, etc.)
     return redirect('home')
 
 
@@ -714,13 +685,12 @@ def toggle_comment_like(request, comment_id):
 # =========================
 
 @login_required
-
 def notifications(request):
-    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    # show notifications received by the user
+    notifications_qs = Notification.objects.filter(recipient=request.user).order_by('-created_at')
     return render(request, 'core/notifications.html', {
-        'notifications': notifications
+        'notifications': notifications_qs
     })
-
 
 
 @login_required
@@ -874,20 +844,31 @@ def edit_post(request, post_id):
 def delete_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
-    # Only owner can delete
+    # Permission check
     if post.user != request.user:
-        messages.error(request, "You don't have permission to delete this post")
-        return redirect('home')
-
-    # Delete only via POST to avoid accidental deletes
-    if request.method == 'POST':
-        post.delete()
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'ok', 'message': 'Post deleted', 'post_id': post_id})
-        messages.success(request, 'Post deleted')
-        return redirect('home')
+            return JsonResponse({'status': 'error', 'message': "You don't have permission to delete this post"}, status=403)
+        messages.error(request, "You don't have permission to delete this post")
+        return redirect(request.META.get('HTTP_REFERER', 'home'))
 
-    return render(request, 'confirm_delete.html', {'post': post})
+    # Only accept POST to perform delete
+    if request.method != 'POST':
+        return render(request, 'confirm_delete.html', {'post': post})
+
+    # Perform deletion
+    try:
+        post.delete()
+    except Exception as exc:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Error deleting post'}, status=500)
+        messages.error(request, 'Error deleting post')
+        return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'message': 'Post deleted', 'post_id': post_id})
+
+    messages.success(request, 'Post deleted')
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 @login_required
 def edit_profile(request):
@@ -897,13 +878,15 @@ def edit_profile(request):
         if 'save_profile' in request.POST:
             user_form = EditUserForm(request.POST, instance=request.user)
             profile_form = ProfilePhotoForm(
-                request.POST, request.FILES, instance=profile
+                request.POST,
+                request.FILES,
+                instance=profile
             )
 
             if user_form.is_valid() and profile_form.is_valid():
                 user_form.save()
                 profile_form.save()
-                return redirect('profile', request.user.username)
+                return redirect('edit_profile')
 
         elif 'change_password' in request.POST:
             password_form = PasswordChangeForm(request.user, request.POST)
@@ -912,8 +895,7 @@ def edit_profile(request):
                 update_session_auth_hash(request, user)
                 messages.success(request, 'Password changed successfully!')
                 return redirect('profile', request.user.username)
-        else:
-            password_form = PasswordChangeForm(user=request.user)
+
     else:
         user_form = EditUserForm(instance=request.user)
         profile_form = ProfilePhotoForm(instance=profile)
@@ -923,14 +905,15 @@ def edit_profile(request):
         'user_form': user_form,
         'profile_form': profile_form,
         'password_form': password_form,
+        'profile': profile,
     })
     
     
 @login_required
 def drafts(request):
     drafts_qs = Post.objects.filter(user=request.user, status='draft').select_related('user').annotate(
-        like_count=Count('like', distinct=True),
-        comment_count=Count('comment', distinct=True)
+        like_count=Count('likes', distinct=True),
+        comment_count=Count('comments', distinct=True)
     ).order_by('-created_at')
 
     context = {'drafts': drafts_qs}
@@ -1096,16 +1079,20 @@ def list_profile_files(request):
 
     return render(request, 'debug/profile_files.html', {'files': files})
 
-def followers_list(request, username):
-    user = get_object_or_404(User, username=username)
 
-    followers = Follow.objects.filter(
-        following=user
-    ).select_related('follower')
+
+def followers_list(request, username):
+    profile_user = get_object_or_404(User, username=username)
+
+    # Support both related_name and legacy lookups:
+    try:
+        followers = profile_user.followers.all()
+    except Exception:
+        followers = Follow.objects.filter(following=profile_user).select_related('follower')
 
     return render(request, 'core/followers.html', {
-        'profile_user': user,
-        'followers': followers
+        'profile_user': profile_user,
+        'followers': followers,
     })
 
 
@@ -1140,6 +1127,12 @@ def user_posts(request, username):
 from .models import Community, CommunityPost, CommunityComment
 
 
+def community_list(request):
+    communities = Community.objects.order_by('-created_at')
+    context = {'communities': communities}
+    return render(request, 'community_list.html', context)
+
+@login_required
 def community_list(request):
     communities = Community.objects.order_by('-created_at')
     context = {'communities': communities}
@@ -1197,7 +1190,27 @@ def community_detail(request, community_id):
                     text=text
                 )
 
-            return redirect("community_detail", community_id=community.id)
+                return redirect(f"/communities/{community.id}/#comments-{post_id}")
+
+
+
+    # ================= FETCH POSTS =================
+    posts = (
+        community.posts
+        .select_related("user")
+        .prefetch_related("comments__user", "likes")
+        .order_by("-created_at")
+        if can_post else []
+    )
+
+    return render(request, "community_detail.html", {
+        "community": community,
+        "posts": posts,
+        "can_post": can_post,
+        "is_member": is_member,
+        "is_creator": is_creator,
+        "has_posted": has_posted,
+    })
 
     # ================= FETCH POSTS =================
     posts = (
@@ -1333,11 +1346,7 @@ def delete_community(request, community_id):
 def toggle_community_like(request, post_id):
     post = get_object_or_404(CommunityPost, id=post_id)
 
-    like, created = CommunityPostLike.objects.get_or_create(
-        user=request.user,
-        post=post
-    )
-
+    like, created = CommunityPostLike.objects.get_or_create(user=request.user, post=post)
     if not created:
         like.delete()
 

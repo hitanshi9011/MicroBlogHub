@@ -19,9 +19,17 @@
 
     {% if request.user.is_authenticated %}
     <section class="current-user-card">
-      <div class="avatar avatar-lg">
-        {{ request.user.username|first|upper }}
-      </div>
+
+      {% if request.user.profile.photo %}
+        <img src="{{ request.user.profile.photo.url }}"
+             class="avatar avatar-lg"
+             alt="Profile photo">
+      {% else %}
+        <div class="avatar avatar-lg">
+          {{ request.user.username|first|upper }}
+        </div>
+      {% endif %}
+
       <div class="user-meta">
         <h2>@{{ request.user.username }}</h2>
         <p>Logged in user</p>
@@ -40,148 +48,91 @@
 
     <div class="profile-edit-container">
 
+      <!-- ================= EDIT PROFILE ================= -->
       <section class="edit-profile-card">
         <h2>Edit Profile</h2>
 
-        <form method="POST" enctype="multipart/form-data" class="profile-form">
+        <form method="POST"
+              enctype="multipart/form-data"
+              class="profile-form">
           {% csrf_token %}
 
-          {% if user_form.non_field_errors %}
-            <div class="errorlist">
-              {% for error in user_form.non_field_errors %}
-                <li>{{ error }}</li>
-              {% endfor %}
-            </div>
-          {% endif %}
-
-          {% if profile_form.non_field_errors %}
-            <div class="errorlist">
-              {% for error in profile_form.non_field_errors %}
-                <li>{{ error }}</li>
-              {% endfor %}
-            </div>
-          {% endif %}
-
+          <!-- USERNAME -->
           <div class="form-section">
             <h3>Username</h3>
             <div class="form-group">
               {{ user_form.username }}
-              {% if user_form.username.errors %}
-                <div class="errorlist">
-                  {% for error in user_form.username.errors %}
-                    <li>{{ error }}</li>
-                  {% endfor %}
-                </div>
-              {% endif %}
             </div>
           </div>
 
+          <!-- PROFILE PHOTO -->
           <div class="form-section">
             <h3>Profile Photo</h3>
+
             <div class="form-group">
               {{ profile_form.photo }}
-              {% if profile_form.photo.errors %}
-                <div class="errorlist">
-                  {% for error in profile_form.photo.errors %}
-                    <li>{{ error }}</li>
-                  {% endfor %}
-                </div>
-              {% endif %}
-              {% if profile and profile.photo %}
-                <div class="current-photo">
-                  <p>Current photo:</p>
-                  <img src="{{ profile.photo.url }}"
-                       alt="Current profile photo"
-                       style="max-width: 100px; max-height: 100px; border-radius: 8px;">
-                </div>
-              {% endif %}
-           
-
             </div>
+
+            {% if profile.photo %}
+              <div class="current-photo">
+                <p>Current photo:</p>
+                <img src="{{ profile.photo.url }}"
+                     alt="Current profile photo"
+                     style="width:100px; height:100px; border-radius:50%;">
+              </div>
+            {% endif %}
           </div>
 
+          <!-- BIO -->
           <div class="form-section">
             <h3>Bio</h3>
             <div class="form-group">
               {{ profile_form.bio }}
-              {% if profile_form.bio.errors %}
-                <div class="errorlist">
-                  {% for error in profile_form.bio.errors %}
-                    <li>{{ error }}</li>
-                  {% endfor %}
-                </div>
-              {% endif %}
             </div>
           </div>
 
+          <!-- SAVE -->
           <div class="form-actions">
-            <button type="submit" name="save_profile" class="primary-btn">Save Profile Changes</button>
+            <button type="submit"
+                    name="save_profile"
+                    class="primary-btn">
+              Save Profile Changes
+            </button>
           </div>
+
         </form>
       </section>
 
+      <!-- ================= CHANGE PASSWORD ================= -->
       <section class="edit-password-card">
-        <h3>Change Password</h3>
+        <h2>Change Password</h2>
 
         <form method="POST" class="password-form">
           {% csrf_token %}
 
-          {% if password_form.non_field_errors %}
-            <div class="errorlist">
-              {% for error in password_form.non_field_errors %}
-                <li>{{ error }}</li>
-              {% endfor %}
-            </div>
-          {% endif %}
-
-          <div class="form-group">
-            {{ password_form.old_password }}
-            {% if password_form.old_password.errors %}
-              <div class="errorlist">
-                {% for error in password_form.old_password.errors %}
-                  <li>{{ error }}</li>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-
-          <div class="form-group">
-            {{ password_form.new_password1 }}
-            {% if password_form.new_password1.errors %}
-              <div class="errorlist">
-                {% for error in password_form.new_password1.errors %}
-                  <li>{{ error }}</li>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
-
-          <div class="form-group">
-            {{ password_form.new_password2 }}
-            {% if password_form.new_password2.errors %}
-              <div class="errorlist">
-                {% for error in password_form.new_password2.errors %}
-                  <li>{{ error }}</li>
-                {% endfor %}
-              </div>
-            {% endif %}
-          </div>
+          {{ password_form.as_p }}
 
           <div class="form-actions">
-            <button type="submit" name="change_password" class="primary-btn">Change Password</button>
+            <button type="submit"
+                    name="change_password"
+                    class="primary-btn">
+              Change Password
+            </button>
           </div>
         </form>
       </section>
 
+      <!-- BACK -->
       <div class="back-link">
-        <a href="{% url 'profile' request.user.username %}">← Back to Profile</a>
+        <a href="{% url 'profile' request.user.username %}">
+          ← Back to Profile
+        </a>
       </div>
 
     </div>
-
   </main>
-
 </div>
+
 
 <style>
 .profile-edit-container {

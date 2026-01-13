@@ -38,8 +38,9 @@ def notification_count(request):
 
 
 def top_creators(request):
+    # select_related to avoid N+1 when accessing .user, limit to top 5
     return {
-        'top_creators': Profile.objects
-        .select_related('user')
-        .order_by('-reputation_score')[:5]
+        'top_creators': Profile.objects.select_related('user')
+            .only('user__username', 'photo', 'reputation_score', 'level')
+            .order_by('-reputation_score')[:5]
     }

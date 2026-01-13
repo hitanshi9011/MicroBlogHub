@@ -13,12 +13,12 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
+    <!-- Ensure CSRF cookie is set on pages that extend this template (login/register) -->
+    <div style="display:none;">{% csrf_token %}</div>
 
     <!-- NO HEADER HERE -->
-
     <div class="main-content-wrapper">
         {% block content %}{% endblock %}
     </div>
-
 </body>
 </html>

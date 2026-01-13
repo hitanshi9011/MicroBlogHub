@@ -1,0 +1,116 @@
+/* ===== COMMUNITY GRID ===== */
+.community-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.6rem;
+    margin-top: 2rem;
+  }
+  
+  .community-card {
+    position: relative;
+    padding: 1.5rem;
+    border-radius: 18px;
+    background: linear-gradient(
+      180deg,
+      rgba(255,255,255,0.06),
+      rgba(255,255,255,0.02)
+    );
+    border: 1px solid rgba(255,255,255,0.12);
+    transition: all 0.35s ease;
+  }
+  
+  .community-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 45px rgba(99,102,241,0.35);
+    border-color: #6366f1;
+  }
+  
+  .community-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .community-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #a78bfa;
+    text-decoration: none;
+  }
+  
+  .community-desc {
+    margin: 1rem 0;
+    color: #e5e7eb;
+    line-height: 1.6;
+  }
+  
+  .community-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #9ca3af;
+  }
+  
+  .open-btn {
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #6366f1, #22c55e);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  
+  .delete-community-form {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+
+  /* ===== BASE CARD ===== */
+.community-card {
+    position: relative;
+    padding: 1.5rem;
+    border-radius: 18px;
+    background: linear-gradient(
+      180deg,
+      rgba(255,255,255,0.06),
+      rgba(255,255,255,0.02)
+    );
+    border: 1px solid rgba(255,255,255,0.12);
+    transition: 
+      transform 0.35s ease,
+      box-shadow 0.35s ease,
+      border-color 0.35s ease;
+  }
+  
+  /* ===== POKÉMON HOVER GLOW ===== */
+  .community-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: #a78bfa;
+  
+    box-shadow:
+      0 0 0 1px rgba(167,139,250,0.6),
+      0 15px 40px rgba(99,102,241,0.45),
+      0 0 25px rgba(139,92,246,0.6);
+  }
+
+  .community-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 18px;
+    background: linear-gradient(
+      120deg,
+      transparent 20%,
+      rgba(167,139,250,0.25),
+      transparent 80%
+    );
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+  }
+  
+  .community-card:hover::before {
+    opacity: 1;
+  }

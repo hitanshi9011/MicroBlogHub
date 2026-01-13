@@ -10,11 +10,13 @@ urlpatterns = [
 	path('logout/', views.logout_view, name='logout'),
 
 	# Profile
-	path('profile/<str:username>/', views.profile, name='profile'),
-	path('users/<str:username>/posts/', views.user_posts, name='user_posts'),
-	path('profile/<str:username>/followers/', views.followers_list, name='followers'),
-	path('profile/<str:username>/following/', views.following_list, name='following'),
 	path('profile/edit/', views.edit_profile, name='edit_profile'),
+
+	# canonical profile routes (username-specific)
+ 	path('profile/<str:username>/', views.profile, name='profile'),
+ 	path('users/<str:username>/posts/', views.user_posts, name='user_posts'),
+ 	path('profile/<str:username>/followers/', views.followers_list, name='followers'),
+ 	path('profile/<str:username>/following/', views.following_list, name='following'),
 	path('account/delete/', views.delete_account, name='delete_account'),
 
 	# Posts
@@ -23,13 +25,13 @@ urlpatterns = [
 	path('posts/<int:post_id>/delete/', views.delete_post, name='delete_post'),
 	path('create/', views.create_post, name='create_post'),
 
-	# Follow / Like
-	path('follow/<int:user_id>/', views.follow_user, name='follow_user'),
-	path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
-	path('like/<int:post_id>/', views.like_post, name='like_post'),
-	path('unlike/<int:post_id>/', views.unlike_post, name='unlike_post'),
+	# Follow / Like (names expected by templates)
+    path('follow/<int:user_id>/', views.follow_user, name='follow'),
+    path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow'),
+    path('like/<int:post_id>/', views.like_post, name='like'),
+    path('unlike/<int:post_id>/', views.unlike_post, name='unlike'),
 
-	# Drafts (single canonical set — no duplicates)
+	# Drafts
 	path('drafts/', views.drafts, name='drafts'),
 	path('drafts/edit/<int:post_id>/', views.edit_draft, name='edit_draft'),
 	path('drafts/delete/<int:post_id>/', views.delete_draft, name='delete_draft'),
@@ -49,21 +51,17 @@ urlpatterns = [
 	path('notifications/dropdown/', views.notification_dropdown, name='notification_dropdown'),
 	path('notifications/<int:id>/redirect/', views.notification_redirect, name='notification_redirect'),
 
-    # Community URLs
-    path('communities/', views.community_list, name='community_list'),
-    path('communities/create/', views.create_community, name='create_community'),
-    path('communities/<int:community_id>/', views.community_detail, name='community_detail'),
-    path('communities/<int:community_id>/post/<int:post_id>/delete/', views.delete_community_post, name='delete_community_post'),
-    path('communities/<int:community_id>/post/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
-    path('communities/<int:community_id>/comment/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
-    path('communities/<int:community_id>/delete/', views.delete_community, name='delete_community'),
-    path('communities/join/<int:community_id>/', views.join_community, name='join_community'),
-    path('communities/leave/<int:community_id>/', views.leave_community, name='leave_community'),
-    path(
-    "community/post/<int:post_id>/like/",
-    views.toggle_community_like,
-    name="toggle_community_like"
-),
+	# Community URLs (single canonical set)
+	path('communities/', views.community_list, name='community_list'),
+	path('communities/create/', views.create_community, name='create_community'),
+	path('communities/<int:community_id>/', views.community_detail, name='community_detail'),
+	path('communities/<int:community_id>/post/<int:post_id>/delete/', views.delete_community_post, name='delete_community_post'),
+	path('communities/<int:community_id>/post/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
+	path('communities/<int:community_id>/comment/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
+	path('communities/<int:community_id>/delete/', views.delete_community, name='delete_community'),
+	path('communities/join/<int:community_id>/', views.join_community, name='join_community'),
+	path('communities/leave/<int:community_id>/', views.leave_community, name='leave_community'),
+	path('community/post/<int:post_id>/like/', views.toggle_community_like, name='toggle_community_like'),
 
 	# Messages
 	path('messages/', views.messages_list, name='messages'),
@@ -71,15 +69,6 @@ urlpatterns = [
 
 	# Search
 	path('search/', views.search, name='search'),
-
-	# Communities
-	path('communities/', views.community_list, name='community_list'),
-	path('communities/create/', views.create_community, name='create_community'),
-	path('communities/<int:community_id>/', views.community_detail, name='community_detail'),
-	path('communities/<int:community_id>/delete/', views.delete_community, name='delete_community'),
-	path('communities/<int:community_id>/posts/<int:post_id>/delete/', views.delete_community_post, name='delete_community_post'),
-	path('communities/<int:community_id>/comments/<int:comment_id>/delete/', views.delete_community_comment, name='delete_community_comment'),
-	path('communities/<int:community_id>/posts/<int:post_id>/edit/', views.edit_community_post, name='edit_community_post'),
 
 	# Debug / misc
 	path('debug/profile-files/', views.list_profile_files, name='list_profile_files'),

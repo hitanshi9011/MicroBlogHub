@@ -4,7 +4,7 @@
 {% block extra_head %}
 <!-- Optional: add CSS in head -->
  
-<link rel="stylesheet" href="{% static 'core/css/profile.css' %}">
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -13,7 +13,7 @@
     <ul class="profile-list">
         {% for follow in following %}
         <li>
-            <img src="{{ follow.following.profile.image.url }}" alt="Avatar">
+            <img src="{{ follow.following.profile.photo_url }}" alt="Avatar" width="48" height="48">
             <div class="profile-info">
                 <strong>{{ follow.following.username }}</strong>
                 <p>{{ follow.following.profile.bio }}</p>
@@ -24,6 +24,10 @@
         <p>No following yet.</p>
         {% endfor %}
     </ul>
-    <a href="{% url 'home' %}" class="back-home-btn">🏠 Back to Home</a>
+   <a href="{% url 'profile' request.user.username %}" class="back-home-btn">
+  👤 Back to Profile
+</a>
+
+
 </div>
 {% endblock %}
