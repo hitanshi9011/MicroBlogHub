@@ -35,3 +35,11 @@ def notification_count(request):
             ).count()
         }
     return {}
+
+
+def top_creators(request):
+    return {
+        'top_creators': Profile.objects
+        .select_related('user')
+        .order_by('-reputation_score')[:5]
+    }

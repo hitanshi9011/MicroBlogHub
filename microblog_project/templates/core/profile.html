@@ -84,15 +84,25 @@
                     <!-- ACTIONS -->
                     {% if user.is_authenticated and user != profile_user %}
                         <div class="profile-actions">
+<<<<<<< HEAD
                             {% if is_following %}
                                 <form method="POST" action="{% url 'unfollow' profile_user.id %}">
+=======
+  {% if is_following %}
+                                <form method="POST" action="{% url 'unfollow_user' profile_user.id %}" style="display:inline;" class="ajax-follow">
+>>>>>>> d39a0e4f9eb478299f855be6c3d3512260be64f9
                                     {% csrf_token %}
                                     <button type="submit" class="btn-follow btn-unfollow">
                                         ✓ Following
                                     </button>
                                 </form>
+<<<<<<< HEAD
                             {% else %}
                                 <form method="POST" action="{% url 'follow' profile_user.id %}">
+=======
+  {% else %}
+                                <form method="POST" action="{% url 'follow_user' profile_user.id %}" style="display:inline;" class="ajax-follow">
+>>>>>>> d39a0e4f9eb478299f855be6c3d3512260be64f9
                                     {% csrf_token %}
                                     <button type="submit" class="btn-follow">
                                         + Follow
@@ -162,8 +172,70 @@
                         </div>
 
                         <div class="post-card-footer">
+<<<<<<< HEAD
                             ❤️ {{ post.like_count }} · 💬 {{ post.comment_count }}
                         </div>
+=======
+                            <div class="post-engagement">
+                                <div class="engagement-item like-item" data-likes="{{ post.like_count }}">
+                                    <span class="engagement-icon">❤️</span>
+                                    <span class="engagement-count">{{ post.like_count }}</span>
+                                </div>
+                                <div class="engagement-item comment-item">
+                                    onclick="MicroBolgHub.toggleProfileComments({{ post.id }})">
+                                    <span class="engagement-icon">💬</span>
+                                    <span class="engagement-count">{{ post.comment_count }}</span>
+                                </div>
+                               
+
+</div>
+
+                                <div class="engagement-item share-item">
+                                    <span class="engagement-icon">🔗</span>
+                                    <span class="engagement-count">Share</span>
+                                </div>
+                            </div>
+  </div>
+  <!-- PROFILE COMMENTS SECTION -->
+<div class="profile-comments-section"
+id="profile-comments-{{ post.id }}"
+style="display: none; margin-top: 1rem;">
+
+{% if post.comment_set.count > 0 %}
+{% for comment in post.comment_set.all %}
+ <div class="comment-item" style="margin-bottom: 0.75rem;">
+   <div class="comment-avatar">
+     {{ comment.user.username|first|upper }}
+   </div>
+   <div class="comment-content">
+     <strong>{{ comment.user.username }}</strong>
+     <span class="comment-time">
+       · {{ comment.created_at|timesince }} ago
+     </span>
+     <div class="comment-text">{{ comment.text }}</div>
+   </div>
+ </div>
+{% endfor %}
+{% else %}
+<p style="color: var(--text-soft); font-size: 0.9rem;">
+ No comments yet
+</p>
+{% endif %}
+
+{% if user.is_authenticated %}
+<form method="POST"
+   action="{% url 'add_comment' post.id %}"
+   style="margin-top: 0.75rem;">
+{% csrf_token %}
+<input type="text"
+      name="comment"
+      placeholder="Write a comment..."
+      required
+      style="width: 100%; padding: 0.6rem; border-radius: 10px;">
+</form>
+{% endif %}
+</div>
+>>>>>>> d39a0e4f9eb478299f855be6c3d3512260be64f9
 
                     </article>
                 {% endfor %}

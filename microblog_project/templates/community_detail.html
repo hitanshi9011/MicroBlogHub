@@ -1,110 +1,212 @@
 {% extends 'base.html' %}
-{% block title %}{{ community.name }} | MicroBlogHub{% endblock %}
+
+{% block title %}
+{{ community.name }} | MicroBlogHub
+{% endblock %}
 
 {% block content %}
+
 <section class="container full-width community-detail">
-  <h1>{{ community.name }}</h1>
-  {% if request.user.is_authenticated and community.created_by and request.user == community.created_by %}
+
+  <!-- ================= HEADER ================= -->
+  <div class="community-header"
+       style="display:flex; justify-content:space-between; align-items:center; gap:1rem;">
+
+    <!-- LEFT -->
+    <div>
+      <h1 style="margin:0;">{{ community.name }}</h1>
+      <p class="communuty-desc">{{ community.description }}</p>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="community-actions"
+         style="display:flex; gap:0.5rem; align-items:center;">
+
+      {% if is_member %}
+        <span class="joined-badge">Joined</span>
+      {% endif %}
+
+      {% if is_member and not is_creator %}
+        <form method="POST"
+              action="{% url 'leave_community' community.id %}"
+              onsubmit="return confirm('Leave this community?');"
+              style="margin:0;">
+          {% csrf_token %}
+          <button type="submit" class="leave-btn">Leave</button>
+        </form>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {% if request.user == community.created_by %}
     <div style="margin-top:0.5rem;">
-      <a href="{% url 'delete_community' community.id %}" class="icon-btn" title="Delete community">🗑️ Delete community</a>
+      <a href="{% url 'delete_community' community.id %}"
+         class="icon-btn"
+         title="Delete community">
+        🗑️ Delete community
+      </a>
     </div>
   {% endif %}
-  <p class="communuty-desc">{{ community.description }}</p>
 
+  <!-- ================= POST COMPOSER ================= -->
   <section class="community-composer composer-card">
-    {% if request.user.is_authenticated %}
+
+    {% if request.user.is_authenticated and can_post %}
       <div class="avatar">{{ request.user.username|first|upper }}</div>
-      <form method="POST" action="" class="composer-main">
+
+      <form method="POST" class="composer-main">
         {% csrf_token %}
-        <textarea name="content" rows="3" maxlength="1000" placeholder="Post to {{ community.name }}"></textarea>
+        <textarea name="content"
+                  rows="3"
+                  maxlength="1000"
+                  placeholder="Post to {{ community.name }}"
+                  required></textarea>
+
         <input type="hidden" name="action" value="post">
+
         <div class="composer-footer">
-          <span></span>
-          <div class="composer-actions">
-            <button type="submit" class="primary-btn">Post</button>
-          </div>
+          <button type="submit" class="primary-btn">Post</button>
         </div>
       </form>
+
+    {% elif request.user.is_authenticated %}
+      <div class="join-lock">
+        <p>You must join this community to post.</p>
+        <a href="{% url 'join_community' community.id %}" class="join-btn">
+          Join Community
+        </a>
+      </div>
+
     {% else %}
-      <p><a href="{% url 'login' %}">Log in</a> to post in this community.</p>
+      <p><a href="{% url 'login' %}">Log in</a> to post.</p>
     {% endif %}
+
   </section>
+
+  <!-- ================= POSTS ================= -->
+
 
   <section class="community-posts">
     {% for post in posts %}
-      <article class="post">
-        <div class="avatar">{{ post.user.username|first|upper }}</div>
-        <div class="post-main">
-          <header class="post-header" style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
-            <div>
-              <strong>{{ post.user.username }}</strong>
-              <span class="post-dot">·</span>
-              <span class="post-time">{{ post.created_at|timesince }} ago</span>
-            </div>
-            <div class="post-owner-actions">
-              {% if request.user.is_authenticated and request.user == post.user %}
-                <a href="{% url 'edit_community_post' community.id post.id %}" class="action-btn" title="Edit">✏️</a>
-                <form method="POST" action="{% url 'delete_community_post' community.id post.id %}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
-                  {% csrf_token %}
-                  <button type="submit" class="icon-btn" title="Delete post">🗑️</button>
-                </form>
-              {% elif request.user.is_authenticated and request.user == community.created_by %}
-                <form method="POST" action="{% url 'delete_community_post' community.id post.id %}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
-                  {% csrf_token %}
-                  <button type="submit" class="icon-btn" title="Delete post">🗑️</button>
-                </form>
-              {% endif %}
-            </div>
-          </header>
-          <div class="post-body">{{ post.content }}</div>
 
-          <div class="post-comments">
-            <h4>Comments ({{ post.comments.count }})</h4>
-            <div class="comments-list">
-              {% for c in post.comments.all %}
-                <div class="comment-item" style="display:flex; gap:0.5rem; align-items:flex-start;">
-                  <div class="comment-avatar avatar">{{ c.user.username|first|upper }}</div>
-                  <div class="comment-content" style="flex:1;">
-                    <div style="display:flex; gap:0.5rem; align-items:center;">
-                      <strong>{{ c.user.username }}</strong>
-                      <span class="comment-time">· {{ c.created_at|timesince }} ago</span>
-                      {% if request.user.is_authenticated %}
-                        {% if request.user == c.user or request.user == community.created_by %}
-                          <form method="POST" action="{% url 'delete_community_comment' community.id c.id %}" style="display:inline; margin-left:0.5rem;" onsubmit="return confirm('Delete this comment?');">
-                            {% csrf_token %}
-                            <button type="submit" class="icon-btn" title="Delete comment">🗑️</button>
-                          </form>
-                        {% endif %}
-                      {% endif %}
-                    </div>
-                    <div class="comment-text">{{ c.text }}</div>
-                  </div>
-                </div>
-              {% empty %}
-                <p>No comments yet.</p>
-              {% endfor %}
-            </div>
 
-            {% if request.user.is_authenticated %}
-              <form method="POST" action="" style="margin-top:0.5rem;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="comment">
-                <input type="hidden" name="post_id" value="{{ post.id }}">
-                <div style="display:flex; gap:0.5rem;">
-                  <input type="text" name="comment" placeholder="Write a comment..." required class="text-input">
-                  <button type="submit" class="primary-btn">Reply</button>
-                </div>
-              </form>
-            {% else %}
-              <p><a href="{% url 'login' %}">Log in</a> to comment.</p>
-            {% endif %}
-          </div>
-        </div>
-      </article>
+    
+    <article class="post">
+      <div class="avatar">{{ post.user.username|first|upper }}</div>
+    
+      <div class="post-main">
+        <strong>{{ post.user.username }}</strong>
+        <span class="post-time">{{ post.created_at|timesince }} ago</span>
+    
+        <div class="post-body">{{ post.content }}</div>
+    
+        <!-- ACTION BUTTONS -->
+
+        <!-- ACTION BUTTONS -->
+<div class="post-actions"
+style="display:flex; gap:0.75rem; margin-top:0.5rem;">
+
+<!-- LIKE -->
+<form method="POST" action="{% url 'toggle_community_like' post.id %}">
+{% csrf_token %}
+<button type="submit" class="like-btn">
+ 👍 Like ({{ post.likes.count }})
+</button>
+</form>
+
+<!-- COMMENT TOGGLE -->
+<button type="button"
+        class="comment-toggle-btn"
+        onclick="toggleComments({{ post.id }})">
+  💬 Comments ({{ post.comments.count }})
+</button>
+
+
+</div>
+
+<!-- COMMENTS BOX -->
+<div id="comments-box-{{ post.id }}"
+class="comments-section"
+
+style="display:none; margin-top:0.75rem;">
+
+{% for c in post.comments.all %}
+<div class="comment-item">
+ <strong>{{ c.user.username }}</strong>
+ · {{ c.created_at|timesince }} ago
+ <div>{{ c.text }}</div>
+</div>
+{% empty %}
+<p class="muted-text">No comments yet.</p>
+{% endfor %}
+
+{% if request.user.is_authenticated and can_post %}
+<form method="POST" action="">
+ {% csrf_token %}
+ <input type="hidden" name="action" value="comment">
+ <input type="hidden" name="post_id" value="{{ post.id }}">
+
+ <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+   <input type="text"
+          name="comment"
+          placeholder="Write a comment..."
+          required>
+   <button type="submit">Reply</button>
+ </div>
+</form>
+{% endif %}
+</div>
+
+        
+
+          
+      </div>
+    </article>
+    
     {% empty %}
-      <p>No posts yet in this community.</p>
+    <p>No posts yet in this community.</p>
     {% endfor %}
-  </section>
-</section>
+    </section>
+
+    <script>
+      function toggleComments(postId) {
+        const el = document.getElementById("comments-box-" + postId);
+        if (!el) {
+          console.error("Comment box not found for post", postId);
+          return;
+        }
+        el.style.display = el.style.display === "block" ? "none" : "block";
+      }
+    </script>
+    
+      
+
+
+<script>
+  console.log("COMMENT JS LOADED");
+</script>
+
+      
+      
+    
+
+
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const hash = window.location.hash;
+        if (hash.startsWith("#comments-")) {
+          const el = document.querySelector(hash);
+          if (el) el.style.display = "block";
+        }
+      });
+    </script>
+    
+      
+
+
+
+  
+
 
 {% endblock %}

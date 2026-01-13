@@ -23,6 +23,10 @@ from django.utils.text import get_valid_filename
 from django.http import HttpResponseForbidden
 from django.core.files.storage import default_storage
 from django.templatetags.static import static
+from .models import Community, CommunityPost
+from .models import CommunityPostLike
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +35,7 @@ from django.template.loader import render_to_string
 from django.contrib.auth import get_user_model
 from collections import Counter
 import re
+from .models import CommunityPostLike
 
 from .models import (
     Post,
@@ -195,65 +200,32 @@ def home(request):
     })
 
 
-@login_required
+# core/views.py
+
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
+from .models import Profile
+
+
 def profile(request, username):
-    profile_user = get_object_or_404(User, username=username)
+    user = get_object_or_404(User, username=username)
 
-    posts = (
-        Post.objects
-        .filter(user=profile_user)
-        .select_related('user')
-        .annotate(
-            like_count=Count('like', distinct=True),
-            comment_count=Count('comment', distinct=True)
-        )
-        .order_by('-created_at')
+    profile, created = Profile.objects.get_or_create(
+        user=user,
+        defaults={
+            "level": 0,
+            "ai_score": 0.0,
+            "engagement_score": 0,
+            "reputation_score": 0.0,
+            "action_points": 0,
+            "badge": ""
+        }
     )
-    # Show drafts only to the profile owner
-    if request.user == profile_user:
-        posts_qs = Post.objects.filter(user=profile_user)
-    else:
-        posts_qs = Post.objects.filter(user=profile_user, status='published')
 
-    posts = posts_qs.select_related('user').annotate(
-        like_count=Count('like', distinct=True),
-        comment_count=Count('comment', distinct=True)
-    ).order_by('-created_at')
-
-    posts_count = posts.count()
-    followers_count = Follow.objects.filter(following=profile_user).count()
-    following_count = Follow.objects.filter(follower=profile_user).count()
-
-    is_following = False
-    if request.user.is_authenticated and request.user != profile_user:
-        is_following = Follow.objects.filter(
-            follower=request.user,
-            following=profile_user
-        ).exists()
-
-    profile, _ = Profile.objects.get_or_create(user=profile_user)
-
-    photo_url = None
-    try:
-        if profile.photo and getattr(profile.photo, 'name', None):
-            if default_storage.exists(str(profile.photo.name)):
-                photo_url = profile.photo.url
-    except Exception:
-        pass
-
-    context = {
-        'profile_user': profile_user,
-        'profile': profile,
-        'photo_url': photo_url,
-        'posts': posts,
-        'posts_count': posts_count,
-        'followers_count': followers_count,
-        'following_count': following_count,
-        'is_following': is_following,
-    }
-
-    return render(request, 'core/profile.html', context)
-
+    return render(request, "core/profile.html", {
+        "profile_user": user,
+        "profile": profile,
+    })
 
 # =========================
 # AUTH
@@ -419,13 +391,29 @@ def logout_view(request):
 def create_post(request):
     if request.method == "POST":
         content = request.POST.get("content", "").strip()
-        if content:
-            Post.objects.create(
-                user=request.user,
-                content=content,
-                status="published"
-            )
-    return redirect('home')
+        action = request.POST.get("action", "publish")  # 👈 KEY LINE
+
+        if not content:
+            messages.error(request, "Post content cannot be empty")
+            return redirect('home')
+
+        status = "draft" if action == "draft" else "published"
+
+        Post.objects.create(
+            user=request.user,
+            content=content,
+            status=status
+        )
+
+        if status == "draft":
+            messages.success(request, "Draft saved")
+            return redirect("drafts")
+        else:
+            messages.success(request, "Post published")
+            return redirect("home")
+
+    return redirect("home")
+
 
 
 # =========================
@@ -443,12 +431,16 @@ from django.db import transaction, IntegrityError
 def follow_user(request, user_id):
     # Only allow POST
     if request.method != 'POST':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=405)
         messages.error(request, 'Invalid request method')
         return redirect(request.META.get('HTTP_REFERER', 'home'))
 
     target = get_object_or_404(User, id=user_id)
 
     if request.user == target:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': "You cannot follow yourself."}, status=400)
         messages.error(request, "You cannot follow yourself.")
         return redirect('profile', username=target.username)
 
@@ -471,6 +463,18 @@ def follow_user(request, user_id):
             recipient=target,
             notification_type='follow'
         )
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        # return JSON so frontend JS doesn't choke on redirects
+        return JsonResponse({
+            'status': 'ok',
+            'created': created,
+            'is_following': True,
+            'message': f"You are now following @{target.username}." if created else f"You are already following @{target.username}.",
+            'followers_count': Follow.objects.filter(following=target).count(),
+        })
+
+    if created:
         messages.success(request, f"You are now following @{target.username}.")
     else:
         messages.info(request, f"You are already following @{target.username}.")
@@ -482,26 +486,37 @@ def follow_user(request, user_id):
 def unfollow_user(request, user_id):
     # Only allow POST for unfollow action
     if request.method != 'POST':
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
         messages.error(request, 'Invalid method')
         return redirect(request.META.get('HTTP_REFERER', 'home'))
 
     target = get_object_or_404(User, id=user_id)
 
     if request.user == target:
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': "Invalid operation."}, status=400)
         messages.error(request, "Invalid operation.")
         return redirect('profile', username=target.username)
 
-    deleted, _ = Follow.objects.filter(
+    deleted = Follow.objects.filter(
         follower=request.user,
         following=target
-    ).delete()
+    ).delete()[0]
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'ok',
+            'deleted': bool(deleted),
+            'message': f"You unfollowed @{target.username}." if deleted else f"You were not following @{target.username}.",
+            'followers_count': Follow.objects.filter(following=target).count(),
+        })
 
     if deleted:
         messages.success(request, f"You unfollowed @{target.username}.")
     else:
         messages.info(request, f"You were not following @{target.username}.")
 
-    # Stay on profile page
     return redirect('profile', username=target.username)
 
 # =========================
@@ -534,11 +549,13 @@ def like_post(request, post_id):
 @login_required
 def unlike_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
-    Like.objects.filter(recipient=request.user, post=post).delete()
-    return redirect('home')
-    Like.objects.filter(user=request.user, post=post).delete()
-    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
+    Like.objects.filter(
+        user=request.user,   # ✅ correct field
+        post=post
+    ).delete()
+
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
 
 # =========================
 # COMMENTS
@@ -581,6 +598,30 @@ def delete_comment(request, comment_id):
         messages.error(request, 'Not allowed')
 
     return redirect('home')
+
+
+
+@login_required
+def join_community(request, community_id):
+    community = get_object_or_404(Community, id=community_id)
+    if not community.members.filter(id=request.user.id).exists():
+        community.members.add(request.user)
+    return redirect('community_detail', community_id=community.id)
+
+@login_required
+def leave_community(request, community_id):
+    community = get_object_or_404(Community, id=community_id)
+
+    # Prevent creator from leaving own community
+    if request.user == community.created_by:
+        messages.error(request, "Community creator cannot leave.")
+        return redirect('community_detail', community_id=community.id)
+
+    community.members.remove(request.user)
+    messages.success(request, "You left the community.")
+    return redirect('community_detail', community_id=community.id)
+
+
 
 
 from django.shortcuts import get_object_or_404, redirect
@@ -852,6 +893,8 @@ def edit_profile(request):
         'password_form': password_form,
         'profile': profile,
     })
+    
+    
 @login_required
 def drafts(request):
     drafts_qs = Post.objects.filter(user=request.user, status='draft').select_related('user').annotate(
@@ -929,6 +972,74 @@ def draft_action(request, post_id):
         return redirect('drafts')   
 
 @login_required
+def edit_draft(request, post_id):
+    """
+    Render a page to edit a draft (GET) or update/publish it (POST).
+    Returns JSON if requested via X-Requested-With header.
+    """
+    post = get_object_or_404(Post, id=post_id, status='draft')
+
+    if post.user != request.user:
+        messages.error(request, "You don't have permission to edit this draft")
+        return redirect('drafts')
+
+    if request.method == 'POST':
+        content = request.POST.get('content', '').strip()
+        action = request.POST.get('action', 'save')
+
+        if content == '':
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'error', 'message': 'Post content cannot be empty'}, status=400)
+            messages.error(request, 'Post content cannot be empty')
+            return redirect('drafts')
+
+        post.content = content
+        if action == 'publish':
+            post.status = 'published'
+        else:
+            post.status = 'draft'
+        post.save()
+
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'ok',
+                'message': 'Draft published' if action == 'publish' else 'Draft saved',
+                'post_id': post.id,
+                'content': post.content,
+                'action': action,
+            })
+
+        messages.success(request, 'Draft published' if action == 'publish' else 'Draft saved')
+        return redirect('home' if action == 'publish' else 'drafts')
+
+    return render(request, 'edit_draft.html', {'post': post})
+
+
+@login_required
+def delete_draft(request, post_id):
+    """
+    Delete a draft via POST. Returns JSON for AJAX requests.
+    """
+    post = get_object_or_404(Post, id=post_id, status='draft')
+
+    if post.user != request.user:
+        messages.error(request, "You don't have permission to delete this draft")
+        return redirect('drafts')
+
+    if request.method != 'POST':
+        messages.error(request, 'Invalid method')
+        return redirect('drafts')
+
+    post.delete()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'message': 'Draft deleted', 'post_id': post_id})
+
+    messages.success(request, 'Draft deleted')
+    return redirect('drafts')
+
+
+@login_required
 def delete_account(request):
     if request.method == "POST":
         user = request.user
@@ -1003,44 +1114,78 @@ def community_list(request):
     context = {'communities': communities}
     return render(request, 'community_list.html', context)
 
-
+@login_required
 def community_detail(request, community_id):
     community = get_object_or_404(Community, id=community_id)
-    posts = community.posts.select_related('user').prefetch_related('comments').order_by('-created_at')
 
-    if request.method == 'POST':
-        if not request.user.is_authenticated:
-            messages.error(request, 'You must be logged in to post in a community')
-            return redirect('login')
+    is_creator = community.created_by == request.user
+    is_member = community.members.filter(id=request.user.id).exists()
+    can_post = is_creator or is_member
 
-        # support posting a community post or adding a comment
-        action = request.POST.get('action')
-        if action == 'post':
-            content = request.POST.get('content', '').strip()
+    has_posted = CommunityPost.objects.filter(
+        community=community,
+        user=request.user
+    ).exists()
+
+    # ================= HANDLE POST REQUEST =================
+    if request.method == "POST":
+
+        if not can_post:
+            return HttpResponseForbidden("You must join this community.")
+
+        action = request.POST.get("action")
+
+        # -------- CREATE POST --------
+        if action == "post":
+            content = request.POST.get("content", "").strip()
+
             if content:
                 CommunityPost.objects.create(
                     community=community,
                     user=request.user,
                     content=content
                 )
-                return redirect('community_detail', community_id=community.id)
-            else:
-                messages.error(request, 'Post content cannot be empty')
-        elif action == 'comment':
-            post_id = request.POST.get('post_id')
-            text = request.POST.get('comment', '').strip()
-            if post_id and text:
-                post = get_object_or_404(CommunityPost, id=post_id, community=community)
-                CommunityComment.objects.create(post=post, user=request.user, text=text)
-                return redirect('community_detail', community_id=community.id)
-            else:
-                messages.error(request, 'Comment text cannot be empty')
 
-    context = {
-        'community': community,
-        'posts': posts,
-    }
-    return render(request, 'community_detail.html', context)
+            return redirect("community_detail", community_id=community.id)
+
+        # -------- CREATE COMMENT --------
+        elif action == "comment":
+            post_id = request.POST.get("post_id")
+            text = request.POST.get("comment", "").strip()
+
+            if post_id and text:
+                post = get_object_or_404(
+                    CommunityPost,
+                    id=post_id,
+                    community=community
+                )
+
+                CommunityComment.objects.create(
+                    post=post,
+                    user=request.user,
+                    text=text
+                )
+
+            return redirect("community_detail", community_id=community.id)
+
+    # ================= FETCH POSTS =================
+    posts = (
+        community.posts
+        .select_related("user")
+        .prefetch_related("comments__user", "likes")
+        .order_by("-created_at")
+        if can_post else []
+    )
+
+    return render(request, "community_detail.html", {
+        "community": community,
+        "posts": posts,
+        "can_post": can_post,
+        "is_member": is_member,
+        "is_creator": is_creator,
+        "has_posted": has_posted,
+    })
+
 
 
 @login_required
@@ -1079,6 +1224,9 @@ def delete_community_comment(request, community_id, comment_id):
     comment.delete()
     messages.success(request, 'Comment deleted')
     return redirect('community_detail', community_id=community.id)
+
+
+
 
 
 @login_required
@@ -1147,3 +1295,21 @@ def delete_community(request, community_id):
         return redirect('community_list')
 
     return render(request, 'confirm_delete_community.html', {'community': community})
+
+
+
+@login_required
+def toggle_community_like(request, post_id):
+    post = get_object_or_404(CommunityPost, id=post_id)
+
+    like, created = CommunityPostLike.objects.get_or_create(
+        user=request.user,
+        post=post
+    )
+
+    if not created:
+        like.delete()
+
+    return redirect('community_detail', community_id=post.community.id)
+
+

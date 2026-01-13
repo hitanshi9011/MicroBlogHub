@@ -46,28 +46,131 @@
     </section>
 
     <section class="people-section">
-      <h3>People</h3>
+      <h3>🏆 Top Creators</h3>
 
-      {% for u in users %}
-      <div class="person-row">
-        <div class="avatar">{{ u.username|first|upper }}</div>
-        <div class="person-main">
-          <strong>{{ u.username }}</strong>
+     {% for p in top_creators %}
+    <div class="person-row top-creator-row">
+
+      <!-- Avatar -->
+      <div class="avatar">
+        {{ p.user.username|first|upper }}
+      </div>
+
+      <!-- Username + level + follow -->
+      <div class="person-main-inline">
+
+        <div class="username-line">
+          <a href="{% url 'profile' p.user.username %}" class="username-link">
+            {{ p.user.username }}
+          </a>
+
+          {% if forloop.first %}
+            <span class="rank-icon">👑</span>
+          {% else %}
+            <span class="rank-number">#{{ forloop.counter }}</span>
+          {% endif %}
+
+          <span class="level-badge level-{{ p.level|slugify }}">
+            {{  p.level }}
+          </span>
+
         </div>
 
-        {% if u.id in following_ids %}
-          <form method="POST" action="{% url 'unfollow' u.id %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="follow-chip">Unfollow</button>
-          </form>
-        {% else %}
-          <form method="POST" action="{% url 'follow' u.id %}" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit" class="follow-chip">Follow</button>
-          </form>
+        {% if request.user != p.user %}
+          {% if p.user.id in following_ids %}
+            <form method="POST"
+                  action="{% url 'unfollow_user' p.user.id %}"
+                  class="ajax-follow inline-form">
+              {% csrf_token %}
+              <button type="submit" class="follow-chip small">Unfollow</button>
+            </form>
+          {% else %}
+            <form method="POST"
+                  action="{% url 'follow_user' p.user.id %}"
+                  class="ajax-follow inline-form">
+              {% csrf_token %}
+              <button type="submit" class="follow-chip small">Follow</button>
+            </form>
+          {% endif %}
         {% endif %}
+
       </div>
-      {% endfor %}
+    </div>
+
+  {% empty %}
+    <p>No creators yet</p>
+
+  {% endfor %}
+
     </section>
 
 </aside>
+
+<script>
+(function() {
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  document.addEventListener('submit', function(e) {
+    const form = e.target;
+    if (!form.classList.contains('ajax-follow')) return;
+    e.preventDefault();
+
+    const url = form.action;
+    const csrftoken = getCookie('csrftoken');
+
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+      },
+      body: new URLSearchParams(new FormData(form))
+    }).then(r => r.json()).then(json => {
+      if (json.status !== 'ok') {
+        alert(json.message || 'Something went wrong');
+        return;
+      }
+
+      // Update UI: swap Follow <-> Following where possible
+      const btn = form.querySelector('button[type="submit"]');
+      if (!btn) return;
+      if (json.created || json.is_following) {
+        btn.textContent = 'Following';
+        btn.classList.add('following');
+      } else if (json.deleted === true) {
+        btn.textContent = 'Follow';
+        btn.classList.remove('following');
+      } else if (json.created === false) {
+        btn.textContent = 'Following';
+        btn.classList.add('following');
+      }
+      // Optionally update follower counts if returned
+      if (typeof json.followers_count !== 'undefined') {
+        // attempt to find a matching followers stat for this user and update it
+        const userId = url.split('/').filter(Boolean).pop();
+        const followersEls = document.querySelectorAll('.profile-stats .stat-item');
+        // best-effort update: if profile page, replace .stat-number inside for followers
+        const followerNumber = document.querySelector('.profile-stats [href*="/followers/"] .stat-number');
+        if (followerNumber) followerNumber.textContent = json.followers_count;
+      }
+    }).catch(() => {
+      alert('Network error');
+    });
+  });
+})();
+</script>
+

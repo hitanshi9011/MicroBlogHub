@@ -43,91 +43,90 @@ function showToast(message) {
   }, 3000);
 }
 
+// Simple CSRF helper
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-  const list = document.getElementById('drafts-list');
-  const confirmModal = document.getElementById('confirmModal');
-  const confirmModalText = document.getElementById('confirmModalText');
-  const confirmModalConfirm = document.getElementById('confirmModalConfirm');
-  const confirmModalCancel = document.getElementById('confirmModalCancel');
+  const csrftoken = getCookie('csrftoken');
 
-  function openConfirm(message){
-    return new Promise((resolve) => {
-      if(!confirmModal) return resolve(false);
-      confirmModalText.textContent = message;
-      confirmModal.style.display = 'flex';
-      confirmModal.setAttribute('aria-hidden','false');
-
-      function onConfirm(){
-        cleanup();
-        resolve(true);
-      }
-      function onCancel(){
-        cleanup();
-        resolve(false);
-      }
-      function cleanup(){
-        confirmModal.style.display = 'none';
-        confirmModal.setAttribute('aria-hidden','true');
-        confirmModalConfirm.removeEventListener('click', onConfirm);
-        confirmModalCancel.removeEventListener('click', onCancel);
-      }
-
-      confirmModalConfirm.addEventListener('click', onConfirm);
-      confirmModalCancel.addEventListener('click', onCancel);
+  function postForm(url, data) {
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrftoken,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+      },
+      body: new URLSearchParams(data)
+    }).then(res => {
+      if (!res.ok) throw new Error('Network response was not ok');
+      return res.json();
     });
   }
 
-  if (!list) return;
+  document.querySelectorAll('.draft-card').forEach(card => {
+    const textarea = card.querySelector('.draft-content');
+    const statusEl = card.querySelector('.draft-status');
+    const actionUrl = card.dataset.actionUrl;
+    const deleteUrl = card.dataset.deleteUrl;
 
-  list.addEventListener('click', async (e) => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    const postEl = btn.closest('[data-post-id]');
-    const postId = postEl.getAttribute('data-post-id');
-    const contentEl = postEl.querySelector('.draft-content');
-    const statusEl = postEl.querySelector('.draft-status');
-    const action = btn.getAttribute('data-action');
-
-    if (action === 'delete') {
-      const ok = await openConfirm('Delete this draft?');
-      if (!ok) return;
-      const url = `/` + `post/${postId}/delete/`;
-      try {
-        const r = await postAction(url, {});
-        if (r.status === 'ok') {
-          postEl.remove();
-          showToast('Draft deleted');
-        } else {
-          showStatus(statusEl, r.message || 'Error deleting', false);
-        }
-      } catch (err) {
-        showStatus(statusEl, 'Network error', false);
-      }
-      return;
+    function showStatus(msg, timeout = 2500) {
+      statusEl.textContent = msg;
+      if (timeout) setTimeout(() => { if (statusEl.textContent === msg) statusEl.textContent = ''; }, timeout);
     }
 
-    // save or publish
-    const url = `/` + `draft/${postId}/action/`;
-    const data = { content: contentEl.value, action: action };
-    try {
-      if (action === 'publish') {
-        const ok = await openConfirm('Publish this draft now?');
-        if (!ok) return;
-      }
-
-      const r = await postAction(url, data);
-      if (r.status === 'ok') {
-        showStatus(statusEl, r.message || (action === 'publish' ? 'Published' : 'Saved'));
-        showToast(r.message || (action === 'publish' ? 'Published' : 'Saved'));
-        if (action === 'publish') {
-          // remove published draft from list
-          postEl.remove();
-        }
-      } else {
-        showStatus(statusEl, r.message || 'Error', false);
-      }
-    } catch (err) {
-      showStatus(statusEl, 'Network error', false);
+    function saveDraft() {
+      const content = textarea.value.trim();
+      if (content === '') { showStatus('Content cannot be empty', 3000); return Promise.reject(new Error('empty')); }
+      showStatus('Saving...');
+      return postForm(actionUrl, { content, action: 'save' }).then(json => showStatus(json.message || 'Saved')).catch(() => showStatus('Error saving', 3000));
     }
+
+    function publishDraft() {
+      const content = textarea.value.trim();
+      if (content === '') { showStatus('Content cannot be empty', 3000); return Promise.reject(new Error('empty')); }
+      showStatus('Publishing...');
+      return postForm(actionUrl, { content, action: 'publish' }).then(json => { showStatus(json.message || 'Published'); card.remove(); }).catch(() => showStatus('Error publishing', 3000));
+    }
+
+    function deleteDraft() {
+      if (!confirm('Delete this draft?')) return;
+      showStatus('Deleting...');
+      postForm(deleteUrl, {}).then(json => { showStatus(json.message || 'Deleted', 1200); card.remove(); }).catch(() => showStatus('Error deleting', 3000));
+    }
+
+    card.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      if (action === 'save') saveDraft();
+      else if (action === 'publish') publishDraft();
+      else if (action === 'delete') deleteDraft();
+    });
+
+    textarea.addEventListener('keydown', (e) => {
+      const isCmd = e.ctrlKey || e.metaKey;
+      if (isCmd && e.key.toLowerCase() === 's') { e.preventDefault(); saveDraft(); }
+      else if (isCmd && e.key === 'Enter') { e.preventDefault(); publishDraft(); }
+    });
+
+    let blurTimer = null;
+    textarea.addEventListener('blur', () => {
+      clearTimeout(blurTimer);
+      blurTimer = setTimeout(() => { if (textarea.value.trim() !== '') saveDraft(); }, 300);
+    });
   });
 });
