@@ -240,3 +240,5 @@ def photo_url(self):
     if self.photo:
         return self.photo.url
     return '/static/images/default.png'
+
+

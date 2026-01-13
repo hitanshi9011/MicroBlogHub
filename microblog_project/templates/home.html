@@ -84,7 +84,7 @@
             @{{ post.user.username }}
           </a>
           <span class="post-dot">·</span>
-          <span class="post-time">{{ post.created_at|timesince }} ago</span>
+          <span class="post-time">{{ post.created_at }} ago</span>
         </header>
 
           <p class="post-body">{{ post.content|urlize|linebreaksbr }}</p>
@@ -134,7 +134,7 @@
         
               <div class="yt-header">
                 <span class="yt-username">@{{ comment.user.username }}</span>
-                <span class="yt-time">{{ comment.created_at|timesince }} ago</span>
+                <span class="yt-time">{{ comment.created_at}} ago</span>
               </div>
         
               <div class="yt-text" id="comment-text-{{ comment.id }}">

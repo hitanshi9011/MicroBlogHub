@@ -174,12 +174,13 @@
 .profile-list li {
     display: flex;
     align-items: center;
-    background: rgba(11, 16, 32, 0.95);
+    background: rgba(11, 16, 32, 0.9);
     padding: 14px;
     margin-bottom: 12px;
     border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.5);
-    transition: transform 0.2s ease;
+    border: 1px solid rgba(148,163,184,0.04);
+    box-shadow: 0 10px 28px rgba(3,6,23,0.6), 0 2px 6px rgba(79,70,229,0.03);
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
 .profile-list li:hover {
@@ -206,6 +207,40 @@
     box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
 }
 
+/* If template doesn't add view-btn class, style the anchor in list items */
+.profile-list li > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #4f46e5, #22c55e);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+}
+
+/* Ensure profile info takes remaining space */
+.profile-list .profile-info {
+    flex: 1 1 auto;
+    margin-right: 12px;
+}
+
+/* Back button variant used in followers/following templates */
+.back-home-btn, .back-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  color: #818cf8;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+}
+
 .profile-list .follower-card {
     /* ensure explicit follower card appearance */
     background: rgba(11, 16, 32, 0.95);
@@ -217,24 +252,30 @@
     font-weight: bold;
 }
 
-/* ============================
-   BACK BUTTON
-============================ */
-.back-home-btn {
-    display: inline-block;
-    margin-bottom: 25px;
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #4f46e5, #22c55e);
-    color: white;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: bold;
-    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.5);
+/* Username (make visually similar to h1) and bio (h5-sized) */
+.profile-list .profile-info strong {
+    display: block;
+    line-height: 1.05;
+    font-weight: 600; /* match global heading weight */
+    color: #ffffff;
 }
 
-.back-home-btn:hover {
-    box-shadow: 0 10px 30px rgba(79, 70, 229, 0.5);
+.profile-list .profile-info p {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: #aab3d6;
+    font-weight: 400;
 }
+.back-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: #818cf8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
 
 /* ============================
    RESPONSIVE
@@ -270,6 +311,7 @@
     align-items: flex-start !important;
 }
 
+
 .post .avatar {
     width: 44px !important;
     height: 44px !important;
@@ -295,3 +337,64 @@
 
     .post .avatar { width: 48px; height: 48px; }
 }
+/* follower card tweaks */
+.follower-card {
+  padding: 14px 18px;
+}
+
+.follower-card .post-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.follower-card .action-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: #000;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* Post card wrapper so user_posts layout matches other pages */
+
+.post-card {
+    margin-bottom: 14px;
+    display: block;
+    border-radius: 12px;
+    border: 1px solid rgba(148,163,184,0.04);
+    box-shadow: 0 12px 36px rgba(3,6,23,0.62), 0 2px 8px rgba(79,70,229,0.04);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    overflow: hidden;
+}
+
+/* Make post-content fill card and have consistent padding/shadow */
+.post-card .post-content {
+    padding: 18px 20px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(11,16,32,0.92), rgba(7,10,20,0.92));
+    transition: transform 0.16s ease;
+}
+
+.post-card .post-content:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 46px rgba(3,6,23,0.6);
+}
+
+.post-card .post-content p {
+    margin: 0;
+    color: #e5e7eb;
+    word-break: break-word;
+}
+
+/* Tidy footer spacing and color */
+.post-card .post-footer {
+    padding: 8px 12px;
+    color: #94a3b8;
+    font-size: 13px;
+    text-align: right;
+}
+
+
+

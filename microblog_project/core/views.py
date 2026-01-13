@@ -823,13 +823,15 @@ def edit_profile(request):
         if 'save_profile' in request.POST:
             user_form = EditUserForm(request.POST, instance=request.user)
             profile_form = ProfilePhotoForm(
-                request.POST, request.FILES, instance=profile
+                request.POST,
+                request.FILES,
+                instance=profile
             )
 
             if user_form.is_valid() and profile_form.is_valid():
                 user_form.save()
                 profile_form.save()
-                return redirect('profile', request.user.username)
+                return redirect('edit_profile')
 
         elif 'change_password' in request.POST:
             password_form = PasswordChangeForm(request.user, request.POST)
@@ -838,8 +840,7 @@ def edit_profile(request):
                 update_session_auth_hash(request, user)
                 messages.success(request, 'Password changed successfully!')
                 return redirect('profile', request.user.username)
-        else:
-            password_form = PasswordChangeForm(user=request.user)
+
     else:
         user_form = EditUserForm(instance=request.user)
         profile_form = ProfilePhotoForm(instance=profile)
@@ -849,6 +850,7 @@ def edit_profile(request):
         'user_form': user_form,
         'profile_form': profile_form,
         'password_form': password_form,
+        'profile': profile,
     })
 @login_required
 def drafts(request):
@@ -952,16 +954,16 @@ def list_profile_files(request):
 
     return render(request, 'debug/profile_files.html', {'files': files})
 
-def followers_list(request, username):
-    user = get_object_or_404(User, username=username)
 
-    followers = Follow.objects.filter(
-        following=user
-    ).select_related('follower')
+
+def followers_list(request, username):
+    profile_user = get_object_or_404(User, username=username)
+
+    followers = profile_user.followers.all()  # or your related name
 
     return render(request, 'core/followers.html', {
-        'profile_user': user,
-        'followers': followers
+        'profile_user': profile_user,   # ✅ REQUIRED
+        'followers': followers,
     })
 
 

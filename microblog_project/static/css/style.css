@@ -917,3 +917,142 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     border-radius: 12px;
     border: 1px solid rgba(148,163,184,0.04);
 }
+
+
+.site-footer {
+  width: 100%;
+  background: linear-gradient(180deg, #05060a, #03040a);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 80px;
+}
+
+.footer-inner {
+  max-width: 1200px;
+  margin: auto;
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: center;
+  text-align: center;
+}
+
+.footer-brand h3 {
+  color: #ffffff;
+  font-size: 18px;
+  margin: 0;
+}
+
+.footer-brand p {
+  font-size: 13px;
+  color: #8b8fa3;
+  margin: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  font-size: 13px;
+  color: #8b8fa3;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: #ffffff;
+}
+
+.footer-copy {
+  font-size: 12px;
+  color: #5f647a;
+}
+
+.main-footer {
+  width: 100%;
+  background: linear-gradient(180deg, #070b18, #030612);
+  color: #d0d3ff;
+  margin-top: 80px;
+}
+
+/* TOP ROW */
+.footer-top {
+  max-width: 1200px;
+  margin: auto;
+  padding: 40px 20px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+/* LEFT */
+.footer-left {
+  max-width: 420px;
+}
+
+.footer-title {
+  font-size: 22px;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.footer-sub {
+  color: #9aa0ff;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.footer-text {
+  font-size: 13px;
+  color: #b4b9ff;
+  margin: 6px 0;
+}
+
+/* RIGHT */
+.footer-right h3 {
+  font-size: 16px;
+  color: #ffffff;
+  margin-bottom: 12px;
+}
+
+.footer-right ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-right li {
+  margin-bottom: 10px;
+}
+
+.footer-right a {
+  font-size: 14px;
+  color: #9aa0ff;
+  text-decoration: none;
+}
+
+.footer-right a:hover {
+  color: #ffffff;
+}
+
+/* BOTTOM */
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding: 20px;
+  text-align: center;
+}
+
+.footer-disclaimer {
+  font-size: 13px;
+  color: #b4b9ff;
+  max-width: 900px;
+  margin: 0 auto 10px;
+  line-height: 1.6;
+}
+
+.footer-copy {
+  font-size: 12px;
+  color: #8b90cc;
+}

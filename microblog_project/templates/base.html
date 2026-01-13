@@ -261,6 +261,7 @@
 
 
     </style>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
 
@@ -311,22 +312,7 @@
             </div>
         </div>
 
-        <div class="notification-body">
-            {% if unread_notifications %}
-                <ul class="notification-list">
-                    {% for notification in unread_notifications %}
-                        <li class="notification-item">
-                            <div class="notification-text">
-                                {{ notification.message }}
-                            </div>
-                            <div class="notification-time">
-                                {{ notification.created_at|timesince }} ago
-                            </div>
-                        </li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </div>
+
 
     </nav>
 
@@ -360,6 +346,48 @@
         </form>
       </div>
     </div>
+<footer class="main-footer">
+
+  <!-- TOP ROW -->
+  <div class="footer-top">
+
+    <!-- LEFT -->
+    <div class="footer-left">
+      <h2 class="footer-title">MicroBlogHub</h2>
+      <p class="footer-sub">Express • Engage • Echo</p>
+
+      <p class="footer-text">Made for creators & communities</p>
+      <p class="footer-text">Email: support@microbloghub.dev</p>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="footer-right">
+      <h3>Important Links</h3>
+      <ul>
+        <li><a href="{% url 'home' %}">Home</a></li>
+        <li><a href="{% url 'profile' request.user.username %}">Profile</a></li>
+        <li><a href="#">Communities</a></li>
+        <li><a href="#">About</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="footer-bottom">
+    <p class="footer-disclaimer">
+      MicroBlogHub is a community-driven platform. Posts reflect the opinions of
+      individual users. The platform does not guarantee accuracy, availability,
+      or outcomes of shared content.
+    </p>
+
+    <p class="footer-copy">
+      © 2026 MicroBlogHub. All Rights Reserved.
+    </p>
+  </div>
+
+</footer>
+
 
 </body>
 </html>

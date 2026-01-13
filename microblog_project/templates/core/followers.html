@@ -1,27 +1,33 @@
+{% extends 'base.html' %}
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/profile.css' %}">
 
+{% block extra_head %}
+<!-- Optional: add CSS in head -->
+ 
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
 <div class="profile-page">
     <h2>Followers</h2>
-
     <ul class="profile-list">
         {% for follow in followers %}
-        <li class="follower-card">
+        <li>
             <img src="{{ follow.follower.profile.image.url }}" alt="Avatar">
-
             <div class="profile-info">
                 <strong>{{ follow.follower.username }}</strong>
+                <p>{{ follow.follower.profile.bio }}</p>
             </div>
-
-            <a href="{% url 'profile' follow.follower.username %}" class="view-btn">
-                View
-            </a>
+            <a href="{% url 'profile' follow.follower.username %}">View</a>
         </li>
         {% empty %}
-        <p class="empty-text">No followers yet.</p>
+        <p>No following yet.</p>
         {% endfor %}
     </ul>
+   <a href="{% url 'profile' request.user.username %}" class="back-home-btn">
+  👤 Back to Profile
+</a>
 
-    <a href="{% url 'home' %}" class="back-home-btn">🏠 Back to Home</a>
+
 </div>
-
+{% endblock %}
