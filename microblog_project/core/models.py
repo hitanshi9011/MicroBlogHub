@@ -211,12 +211,16 @@ class CommunityPostLike(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    photo = models.ImageField(
-        upload_to='profile_photos/',
-        blank=True,
-        null=True
-    )
-    bio = models.TextField(max_length=160, blank=True)
+    photo = models.ImageField(upload_to='profile_photos/', default='profile_photos/default.png')
+    bio = models.TextField(blank=True)
+
+    ai_score = models.IntegerField(default=0)
+    engagement_score = models.IntegerField(default=0)
+    reputation_score = models.IntegerField(default=0)
+    action_points = models.IntegerField(default=0)
+    level = models.IntegerField(default=1)
+    badge = models.CharField(max_length=50, default="Newbie")
+
 
     def __str__(self):
         return self.user.username
@@ -225,8 +229,4 @@ class Profile(models.Model):
     def photo_url(self):
         if self.photo:
             return self.photo.url
-        return '/static/images/default_avatar.svg'
-
-
-
-
+        return '/static/images/default.png'

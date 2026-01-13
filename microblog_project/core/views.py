@@ -226,8 +226,21 @@ def profile(request, username):
             following=profile_user
         ).exists()
 
-    # ✅ THIS IS ALL YOU NEED
-    profile, _ = Profile.objects.get_or_create(user=profile_user)
+    profile, _ = Profile.objects.get_or_create(
+    user=profile_user,
+    defaults={
+        "ai_score": 0,
+        "engagement_score": 0,
+        "reputation_score": 0,
+        "action_points": 0,
+        "level": 1,
+        "badge": "Newbie",
+        "bio": "",
+        "photo": "profile_photos/default.png",
+    }
+)
+
+
 
     context = {
         'profile_user': profile_user,
@@ -1224,4 +1237,3 @@ from .models import Profile, Post
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
 from .models import Profile, Post
-

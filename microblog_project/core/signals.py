@@ -2,6 +2,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from .models import Like, Comment, Follow, Notification
 
+
+
+
 # ======================
 # LIKE NOTIFICATION
 # ======================
@@ -58,3 +61,5 @@ def create_follow_notification(sender, instance, created, **kwargs):
         recipient=instance.following,
         notification_type='follow'
     )
+
+    
