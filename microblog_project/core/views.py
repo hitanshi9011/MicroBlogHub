@@ -47,6 +47,7 @@ def home(request):
     liked_comments = []
     unread_notifications = []
     unread_notifications_count = 0
+    bookmarked_posts = []
 
     # =========================
     # AUTHENTICATED USER LOGIC

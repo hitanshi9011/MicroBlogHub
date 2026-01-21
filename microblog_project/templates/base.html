@@ -336,7 +336,11 @@
         <h3>Important Links</h3>
         <ul>
           <li><a href="{% url 'home' %}">Home</a></li>
-          <li><a href="{% url 'profile' request.user.username %}">Profile</a></li>
+          {% if request.user.is_authenticated %}
+              <li><a href="{% url 'profile' request.user.username %}">Profile</a></li>
+          {% else %}
+              <li><a href="{% url 'login' %}">Login</a></li>
+          {% endif %}
           <li><a href="#">Communities</a></li>
           <li><a href="#">About</a></li>
         </ul>
