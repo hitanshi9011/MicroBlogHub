@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static text_extras %}
 
 {% block title %}Post by {{ post.user.username }} | MicroBlogHub{% endblock %}
 
@@ -19,7 +19,7 @@
           </div>
         </header>
 
-        <p class="post-body">{{ post.content|urlize|linebreaksbr }}</p>
+        <p class="post-body">{{ post.content|urlize|linkify_hashtags|linebreaksbr }}</p>
 
         <footer class="post-footer">
           <div class="post-actions">
@@ -36,6 +36,17 @@
                 </a>
               {% endif %}
             </div>
+            <div class="bookmark-section">
+              {% if request.user.is_authenticated %}
+                <button class="action-btn bookmark-toggle {% if bookmarked %}bookmarked{% endif %}"
+                  data-post-id="{{ post.id }}"
+                  data-bookmarked="{% if bookmarked %}1{% else %}0{% endif %}"
+                  data-toggle-url="{% url 'bookmark_toggle' post.id %}">🔖</button>
+                <span class="bookmark-count">{{ post.bookmark_count }}</span>
+              {% else %}
+                <a href="{% url 'login' %}" class="action-btn" title="Log in to bookmark">🔖</a>
+              {% endif %}
+            </div>
           </div>
         </footer>
 
@@ -49,7 +60,7 @@
                   <a href="{% url 'profile' comment.user.username %}"><strong>{{ comment.user.username }}</strong></a>
                   <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
                 </div>
-                <div class="comment-text">{{ comment.text|urlize|linebreaksbr }}</div>
+                <div class="comment-text">{{ comment.text|urlize|linkify_hashtags|linebreaksbr }}</div>
               </div>
             </div>
           {% empty %}
@@ -67,11 +78,11 @@
           {% endif %}
         </section>
 
-      </div>
-    </article>
-  </main>
+              </div>
+            </article>
+          </main>
 
-  <aside class="single-post-sidebar">
+          <aside class="single-post-sidebar">
     <section class="trending-section">
       <h4>Trending</h4>
       <div class="hashtag-list">
@@ -98,3 +109,5 @@
   </aside>
 </div>
 {% endblock %}
+
+<!-- bookmark JS moved to static/js/bookmark_toggle.js -->

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static text_extras %}
 
 {% block title %}Profile | {{ profile_user.username }}{% endblock %}
 
@@ -165,7 +165,7 @@
                         </div>
 
                         <div class="post-card-body">
-                            <p>{{ post.content|urlize|linebreaksbr }}</p>
+                            <p>{{ post.content|urlize|linkify_hashtags|linebreaksbr }}</p>
                         </div>
 
                         <div class="post-card-footer">

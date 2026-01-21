@@ -30,6 +30,10 @@ urlpatterns = [
     path('unfollow/<int:user_id>/', views.unfollow_user, name='unfollow'),
     path('like/<int:post_id>/', views.like_post, name='like'),
     path('unlike/<int:post_id>/', views.unlike_post, name='unlike'),
+	path('bookmark/<int:post_id>/', views.bookmark_post, name='bookmark'),
+	path('unbookmark/<int:post_id>/', views.unbookmark_post, name='unbookmark'),
+	path('bookmark/toggle/<int:post_id>/', views.toggle_bookmark, name='bookmark_toggle'),
+	path('bookmarks/', views.bookmarks, name='bookmarks'),
 
 	# Drafts
 	path('drafts/', views.drafts, name='drafts'),

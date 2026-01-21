@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static text_extras %}
 
 {% block title %}Search Results | MicroBlogHub{% endblock %}
 
@@ -50,7 +50,7 @@
             </div>
           </header>
 
-          <p class="post-body">{{ post.content|urlize|linebreaksbr }}</p>
+          <p class="post-body">{{ post.content|urlize|linkify_hashtags|linebreaksbr }}</p>
 
           <div class="post-tags">
             {% for tag in post.tags %}

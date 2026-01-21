@@ -17,7 +17,7 @@ from django.db import transaction, IntegrityError
 from .models import (
     Post, Follow, Like, Comment, CommentLike,
     Message, Notification, Community, CommunityPost,
-    CommunityComment, CommunityPostLike, Profile
+    CommunityComment, CommunityPostLike, Profile, Bookmark
 )
 from .forms import EditUserForm, ProfilePhotoForm
 from django.contrib.auth.forms import PasswordChangeForm
@@ -72,7 +72,8 @@ def home(request):
             status='published'
         ).select_related('user').annotate(
             like_count=Count('likes', distinct=True),
-            comment_count=Count('comments', distinct=True)
+            comment_count=Count('comments', distinct=True),
+            bookmark_count=Count('bookmarks', distinct=True)
         ).order_by('-created_at')
 
         # People section
@@ -81,6 +82,11 @@ def home(request):
         # Likes
         liked_posts = list(
             Like.objects.filter(user=request.user)
+            .values_list('post_id', flat=True)
+        )
+        # Bookmarks
+        bookmarked_posts = list(
+            Bookmark.objects.filter(user=request.user)
             .values_list('post_id', flat=True)
         )
 
@@ -98,7 +104,8 @@ def home(request):
             status='published'
         ).select_related('user').annotate(
             like_count=Count('likes', distinct=True),
-            comment_count=Count('comments', distinct=True)
+            comment_count=Count('comments', distinct=True),
+            bookmark_count=Count('bookmarks', distinct=True)
         ).order_by('-created_at')
 
     # =========================
@@ -165,6 +172,7 @@ def home(request):
         'users': users,
         'following_ids': following_ids,
         'liked_posts': liked_posts,
+        'bookmarked_posts': bookmarked_posts,
         'liked_comments': liked_comments,
         'unread_notifications': unread_notifications,
         'unread_notifications_count': unread_notifications_count,
@@ -184,7 +192,8 @@ def profile(request, username):
         .select_related('user')
         .annotate(
             like_count=Count('likes', distinct=True),
-            comment_count=Count('comments', distinct=True)
+            comment_count=Count('comments', distinct=True),
+            bookmark_count=Count('bookmarks', distinct=True)
         )
         .order_by('-created_at')
     )
@@ -196,7 +205,8 @@ def profile(request, username):
 
     posts = posts_qs.select_related('user').annotate(
         like_count=Count('likes', distinct=True),
-        comment_count=Count('comments', distinct=True)
+        comment_count=Count('comments', distinct=True),
+        bookmark_count=Count('bookmarks', distinct=True)
     ).order_by('-created_at')
 
     posts_count = posts.count()
@@ -218,6 +228,7 @@ def profile(request, username):
     if request.user.is_authenticated:
         liked_posts = list(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
         liked_comments = list(CommentLike.objects.filter(user=request.user).values_list('comment_id', flat=True))
+        bookmarked_posts = list(Bookmark.objects.filter(user=request.user).values_list('post_id', flat=True))
 
     photo_url = None
     try:
@@ -238,6 +249,7 @@ def profile(request, username):
         'is_following': is_following,
         'liked_posts': liked_posts,
         'liked_comments': liked_comments,
+        'bookmarked_posts': bookmarked_posts if request.user.is_authenticated else [],
     }
 
     return render(request, 'core/profile.html', context)
@@ -260,6 +272,9 @@ def post_detail(request, post_id):
     liked = False
     if request.user.is_authenticated:
         liked = Like.objects.filter(user=request.user, post=post).exists()
+    bookmarked = False
+    if request.user.is_authenticated:
+        bookmarked = Bookmark.objects.filter(user=request.user, post=post).exists()
 
     comments = Comment.objects.filter(post=post).select_related('user').order_by('created_at')
 
@@ -278,6 +293,7 @@ def post_detail(request, post_id):
     context = {
         'post': post,
         'liked': liked,
+        'bookmarked': bookmarked,
         'comments': comments,
         'trending_hashtags': top_hashtags,
         'trending_posts': top_posts,
@@ -560,6 +576,94 @@ def unlike_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     Like.objects.filter(user=request.user, post=post).delete()
     return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+
+@login_required
+def bookmark_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+
+    # Only allow POST
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
+
+    created = False
+    try:
+        obj, created = Bookmark.objects.get_or_create(user=request.user, post=post)
+    except Exception:
+        created = False
+
+    # compute new count
+    count = Bookmark.objects.filter(post=post).count()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'action': 'bookmarked', 'post_id': post.id, 'bookmark_count': count, 'created': created})
+
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+
+@login_required
+def toggle_bookmark(request, post_id):
+    """Toggle bookmark for the current user and post.
+
+    Returns JSON: {status: 'ok', bookmarked: true/false, bookmark_count: int}
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
+
+    post = get_object_or_404(Post, id=post_id)
+
+    # If exists -> delete, else create
+    try:
+        existing = Bookmark.objects.filter(user=request.user, post=post).first()
+        if existing:
+            existing.delete()
+            bookmarked = False
+        else:
+            # Use get_or_create to avoid race conditions
+            obj, created = Bookmark.objects.get_or_create(user=request.user, post=post)
+            bookmarked = True if obj else False
+    except IntegrityError:
+        # Concurrent create might raise; ensure state is consistent
+        bookmarked = Bookmark.objects.filter(user=request.user, post=post).exists()
+
+    count = Bookmark.objects.filter(post=post).count()
+
+    return JsonResponse({
+        'status': 'ok',
+        'bookmarked': bookmarked,
+        'bookmark_count': count,
+        'post_id': post.id,
+    })
+
+
+@login_required
+def unbookmark_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Invalid method'}, status=405)
+
+    deleted = Bookmark.objects.filter(user=request.user, post=post).delete()[0]
+    count = Bookmark.objects.filter(post=post).count()
+
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'ok', 'action': 'unbookmarked', 'post_id': post.id, 'bookmark_count': count, 'deleted': bool(deleted)})
+
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
+
+@login_required
+def bookmarks(request):
+    posts = Post.objects.filter(bookmarks__user=request.user, status='published').select_related('user').annotate(
+        like_count=Count('likes', distinct=True),
+        comment_count=Count('comments', distinct=True)
+    ).order_by('-created_at')
+
+    liked_posts = list(Like.objects.filter(user=request.user).values_list('post_id', flat=True))
+
+    return render(request, 'core/bookmarks.html', {
+        'posts': posts,
+        'liked_posts': liked_posts,
+    })
 
 # =========================
 # COMMENTS
@@ -1126,11 +1230,6 @@ def user_posts(request, username):
 # --- Community views ---#
 from .models import Community, CommunityPost, CommunityComment
 
-
-def community_list(request):
-    communities = Community.objects.order_by('-created_at')
-    context = {'communities': communities}
-    return render(request, 'community_list.html', context)
 
 @login_required
 def community_list(request):

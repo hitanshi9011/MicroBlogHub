@@ -1,10 +1,10 @@
 /* Global Enhancements */
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: radial-gradient(circle at top, #1e293b, #020617 60%);
+    background: var(--bg);
     margin: 0;
     padding: 0;
-    color: #e5e7eb;
+    color: var(--text);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -17,14 +17,25 @@ html {
 
 /* Brand color tokens and easing */
 :root {
-    --bg-0: #071026;
-    --bg-1: #0b1020;
-    --text-1: #e5e7eb;
+    /* Color system */
+    --bg: radial-gradient(circle at top, #1e293b, #020617 60%);
+    --surface: rgba(11,16,32,0.6);
+    --surface-strong: rgba(11,16,32,0.95);
+    --text: #e5e7eb;
     --muted: #9ca3af;
+    --border: rgba(148, 163, 184, 0.35);
+    --link: #4f46e5;
+    --link-hover: #6366f1;
+    --btn-text: #ffffff;
+    --on-accent: #ffffff;
+    --input-bg: rgba(15,23,42,0.9);
+    --input-border: rgba(148,163,184,0.35);
+
     --primary-start: #4f46e5;
     --primary-mid: #6366f1;
     --primary-end: #22c55e;
     --accent: #6366f1;
+
     --ease-fast: cubic-bezier(.2,.9,.3,1);
 }
 
@@ -57,7 +68,7 @@ html {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-    color: #e5e7eb;
+    color: var(--text);
     font-weight: 600;
     margin-top: 0;
 }
@@ -67,10 +78,10 @@ textarea, input[type="text"], input[type="password"], input[type="email"] {
     width: 100%;
     padding: 0.875rem 1rem;
     margin-bottom: 1rem;
-    background: rgba(15, 23, 42, 0.9);
-    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
     border-radius: 12px;
-    color: #e5e7eb;
+    color: var(--text);
     font-size: 1rem;
     transition: all 0.3s ease;
     font-family: inherit;
@@ -78,19 +89,19 @@ textarea, input[type="text"], input[type="password"], input[type="email"] {
 
 textarea:focus, input:focus {
     outline: none;
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
-    background: rgba(15, 23, 42, 1);
+    border-color: var(--primary-mid);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    background: var(--input-bg);
 }
 
 textarea::placeholder, input::placeholder {
-    color: #9ca3af;
+    color: var(--muted);
 }
 
 /* Buttons */
 button {
     background: linear-gradient(135deg, #4f46e5, #22c55e);
-    color: white;
+    color: var(--btn-text);
     border: none;
     padding: 0.75rem 1.5rem;
     cursor: pointer;
@@ -161,7 +172,7 @@ button:active {
     align-items: center;
     justify-content: center;
     font-weight: 700;
-    color: white;
+    color: var(--on-accent);
     background: linear-gradient(135deg, #6366f1, #22c55e);
     flex-shrink: 0;
 }
@@ -192,7 +203,7 @@ button:active {
     align-items:center;
     justify-content:center;
     font-weight:700;
-    color:#fff;
+    color: var(--on-accent);
     background: linear-gradient(135deg,#6366f1,#22c55e);
     flex-shrink:0;
 }
@@ -214,7 +225,7 @@ button:active {
 .hashtag-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem; }
 .hashtag-chip {
     background: rgba(79,70,229,0.08);
-    color: #e6e6ff;
+    color: var(--text);
     padding: 0.35rem 0.6rem;
     border-radius: 999px;
     font-weight: 600;
@@ -223,14 +234,64 @@ button:active {
 .hashtag-chip:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(79,70,229,0.08); }
 
 .trending-posts .tpost-row { display:flex; gap:0.6rem; align-items:flex-start; padding:0.5rem 0; }
-.trending-posts .tpost-snippet { color:#cbd5e1; font-size:0.95rem; margin:0; padding: 0.85rem; }
+.trending-posts .tpost-snippet { color:var(--muted); font-size:0.95rem; margin:0; padding: 0.85rem; }
 /* Highlighted search matches */
 .mark-highlight { background: rgba(99,102,241,0.25); padding: 0.05rem 0.2rem; border-radius:4px; }
 
+/* Top Creators (sidebar) - truncate long usernames with ellipsis only in this section */
+.people-section .creator-row {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.45rem 0.25rem;
+    border-radius: 8px;
+}
+.people-section .creator-row:hover { background: rgba(79,70,229,0.03); }
+.people-section .creator-avatar img { width:40px; height:40px; object-fit:cover; border-radius:50%; display:block; }
+.people-section .creator-meta { min-width: 0; flex: 1 1 auto; overflow: hidden; }
+.people-section .creator-top { display:flex; gap:0.5rem; align-items:center; justify-content:space-between; min-width:0; }
+.people-section .creator-username {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+.people-section .creator-badge { flex-shrink: 0; margin-left: 0.5rem; white-space: nowrap; }
+
+/* Follow button styling in Top Creators */
+.people-section .creator-row { display:flex; gap: 0.6rem; align-items:flex-start; }
+.people-section .creator-link { display:flex; gap:0.6rem; align-items:center; flex:1 1 auto; min-width:0; }
+.people-section .creator-avatar img { width:40px; height:40px; object-fit:cover; border-radius:50%; display:block; }
+.people-section .creator-meta { min-width:0; flex:1 1 auto; display:flex; flex-direction:column; }
+.people-section .creator-top { display:flex; gap:0.5rem; align-items:center; justify-content:space-between; }
+.people-section .creator-username { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.people-section .creator-badge { flex-shrink:0; margin-left:0.5rem; white-space:nowrap; }
+.people-section .creator-bottom { color: var(--muted); font-size:0.85rem; margin-top:4px; }
+
+/* Compact follow button placed under the badge */
+.people-section .creator-actions { margin-top:6px; display:flex; justify-content:flex-start; }
+.people-section .follow-btn {
+    background: transparent;
+    border: 1px solid rgba(148,163,184,0.12);
+    color: var(--text);
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    line-height:1;
+}
+.people-section .follow-btn.following {
+    background: linear-gradient(135deg, #4f46e5, #6366f1);
+    color: #fff;
+    border-color: transparent;
+}
+.people-section .creator-actions form { margin:0; }
+
+
 /* Search input styles for base nav (fallback in style.css in case vibetext overrides) */
 .nav-search-form { display:flex; align-items:center; gap:0.4rem; }
-.nav-search-input { width:200px; padding:0.4rem 0.6rem; border-radius:999px; border:1px solid rgba(148,163,184,0.08); background: rgba(0,0,0,0.2); color:#e5e7eb; }
-.nav-search-btn { background:transparent; border:none; color:#cbd5e1; cursor:pointer; }
+.nav-search-input { width:200px; padding:0.4rem 0.6rem; border-radius:999px; border:1px solid rgba(148,163,184,0.08); background: rgba(0,0,0,0.12); color:var(--text); }
+.nav-search-btn { background:transparent; border:none; color:var(--muted); cursor:pointer; }
 
     /* Communities styles removed during UI revert */
 @media (max-width: 768px) {
@@ -241,13 +302,13 @@ button:active {
 /* Links */
 a {
     text-decoration: none;
-    color: #4f46e5;
+    color: var(--link);
     transition: all 0.3s ease;
 }
 
 
 a:hover {
-    color: #6366f1;
+    color: var(--link-hover);
     text-decoration: underline;
 }
 /* Loading Animation */
@@ -273,7 +334,7 @@ a:hover {
 
 /* Focus Visible for Accessibility */
 *:focus-visible {
-    outline: 2px solid #4f46e5;
+    outline: 2px solid var(--primary-start);
     outline-offset: 2px;
 }
 
@@ -306,7 +367,7 @@ a:hover {
     top: -6px;
     right: -8px;
     background: red;
-    color: white;
+    color: var(--btn-text);
     font-size: 12px;
     padding: 2px 6px;
     border-radius: 50%;
@@ -320,9 +381,9 @@ a:hover {
     right: 0;               /* 🔥 align to right */
     width: 340px;
 
-    background: #0f172a;
+    background: var(--surface-strong);
     border-radius: 12px;
-    border: 1px solid #334155;
+    border: 1px solid var(--border);
     box-shadow: 0 12px 30px rgba(0,0,0,0.6);
 
     z-index: 10052;
@@ -358,21 +419,21 @@ a:hover {
 
 .notification-text {
     font-size: 14px;
-    color: #e5e7eb;                /* 🔥 visible text */
+    color: var(--text);
     line-height: 1.4;
 }
 
 .notification-time {
-    display: block;                /* 🔥 force new line */
+    display: block;
     margin-top: 4px;
     font-size: 12px;
-    color: #94a3b8;                /* 🔥 timestamp visible */
+    color: var(--muted);
 }
 
 
 .no-notifications {
     text-align: center;
-    color: #94a3b8;
+    color: var(--muted);
     padding: 10px;
 }
  .notification-wrapper {
@@ -398,7 +459,7 @@ a:hover {
         top: -6px;
         right: -8px;
         background: red;
-        color: white;
+        color: var(--btn-text);
         font-size: 12px;
         padding: 2px 6px;
         border-radius: 50%;
@@ -425,7 +486,7 @@ a:hover {
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    color: white;
+    color: var(--on-accent);
     flex-shrink: 0;
 }
 
@@ -447,7 +508,7 @@ a:hover {
 
 .yt-username {
     font-weight: 600;
-    color: #e5e7eb;
+    color: var(--text);
 }
 
 .yt-time {
@@ -457,7 +518,7 @@ a:hover {
 
 .yt-text {
     margin: 6px 0;
-    color: #e5e7eb;
+    color: var(--text);
 }
 
 .yt-actions {
@@ -487,7 +548,7 @@ a:hover {
     border: none;
     border-bottom: 1px solid #334155;
     background: transparent;
-    color: white;
+    color: var(--text);
     padding: 6px 2px;
 }
 
@@ -499,7 +560,7 @@ a:hover {
     border: none;
     padding: 4px 12px;
     border-radius: 20px;
-    color: white;
+    color: var(--btn-text);
     cursor: pointer;
 }
 
@@ -578,7 +639,7 @@ a:hover {
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
   
-  .yt-avatar {
+    .yt-avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -587,7 +648,7 @@ a:hover {
     align-items: center;
     justify-content: center;
     font-weight: 600;
-    color: #fff;
+        color: var(--on-accent);
     flex-shrink: 0;
   }
   
@@ -609,22 +670,22 @@ a:hover {
     margin-bottom: 4px;
   }
   
-  .yt-username {
-    font-weight: 600;
-    color: #e6e6e6;
-  }
+    .yt-username {
+        font-weight: 600;
+        color: var(--text);
+    }
   
   .yt-time {
     font-size: 12px;
     color: #9aa0a6;
   }
   
-  .yt-text {
-    font-size: 15px;
-    line-height: 1.5;
-    margin-bottom: 8px;
-    color: #f1f1f1;
-  }
+    .yt-text {
+        font-size: 15px;
+        line-height: 1.5;
+        margin-bottom: 8px;
+        color: var(--text);
+    }
   
   /* ACTION BUTTONS */
   .yt-actions {
@@ -645,10 +706,10 @@ a:hover {
     font-size: 13px;
   }
   
-  .yt-actions button:hover,
-  .yt-actions a:hover {
-    color: #ffffff;
-  }
+    .yt-actions button:hover,
+    .yt-actions a:hover {
+        color: var(--btn-text);
+    }
   
   /* VIEW REPLIES */
   .yt-view-replies {
@@ -680,26 +741,26 @@ a:hover {
     margin-top: 8px;
   }
   
-  .yt-reply-form input,
-  .yt-edit-form input {
-    width: 100%;
-    padding: 8px 10px;
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: transparent;
-    color: #fff;
-  }
+    .yt-reply-form input,
+    .yt-edit-form input {
+        width: 100%;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: transparent;
+        color: var(--text);
+    }
   
-  .yt-reply-form button,
-  .yt-edit-form button {
-    margin-top: 6px;
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: none;
-    background: linear-gradient(135deg, #5f7cff, #4dd599);
-    color: #fff;
-    cursor: pointer;
-  }
+    .yt-reply-form button,
+    .yt-edit-form button {
+        margin-top: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: none;
+        background: linear-gradient(135deg, #5f7cff, #4dd599);
+        color: var(--btn-text);
+        cursor: pointer;
+    }
   /* Password field wrapper */
 .password-wrapper {
     position: relative;
@@ -727,7 +788,7 @@ a:hover {
 }
 
 #togglePassword:hover {
-    color: #ffffff;
+    color: var(--btn-text);
 }
 
 
@@ -837,7 +898,7 @@ header {
 
 .drafts-list { display:flex; flex-direction:column; gap:1rem; }
 .draft-card { display:flex; gap:0.75rem; padding:0.75rem; background: rgba(11,16,32,0.55); border-radius:12px; border:1px solid rgba(148,163,184,0.04); align-items:flex-start; }
-.draft-avatar { width:44px; height:44px; border-radius:50%; background: linear-gradient(135deg,#6366f1,#22c55e); display:flex; align-items:center; justify-content:center; font-weight:700; color:white; }
+.draft-avatar { width:44px; height:44px; border-radius:50%; background: linear-gradient(135deg,#6366f1,#22c55e); display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--on-accent); }
 .draft-meta { font-size:0.85rem; color:#9ca3af; }
 .draft-content { flex:1; min-height:48px; padding:0.5rem; border-radius:8px; background: rgba(15,23,42,0.6); border:1px solid rgba(148,163,184,0.04); color:#e5e7eb; }
 .draft-actions { display:flex; gap:0.5rem; margin-top:0.5rem; }
@@ -892,7 +953,7 @@ html.light-theme input[type="password"], body.light-theme input[type="password"]
 }
 html.light-theme button.primary-btn, body.light-theme button.primary-btn {
     background: linear-gradient(135deg, #2563eb, #16a34a);
-    color: white;
+    color: var(--btn-text);
 }
 html.light-theme .icon-btn, body.light-theme .icon-btn {
     background: rgba(2,6,23,0.06);
@@ -900,8 +961,8 @@ html.light-theme .icon-btn, body.light-theme .icon-btn {
     border: 1px solid rgba(2,6,23,0.06);
 }
 html.light-theme .post, body.light-theme .post { background: #fbfdff; border-color: rgba(2,6,23,0.04); }
-html.light-theme .hashtag-chip, body.light-theme .hashtag-chip { background: rgba(79,70,229,0.06); color: #111827; }
-html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #e6ffed; border-color: rgba(34,197,94,0.12); }
+html.light-theme .hashtag-chip, body.light-theme .hashtag-chip { background: rgba(79,70,229,0.06); color: var(--text); }
+html.light-theme .toast, body.light-theme .toast { background: var(--surface-strong); color: var(--text); border-color: rgba(34,197,94,0.12); }
 
 /* Full-width container for pages that should not use sidebars */
 .container.full-width {
@@ -923,7 +984,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
 
 .messages-container .success {
     background-color: #6fb78a;
-    color: #ffffff;
+    color: var(--btn-text);
     padding: 10px 16px;
     border-radius: 8px;
     font-weight: 500;
@@ -935,7 +996,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     top: 70px;
     right: 2rem;
     width: 320px;
-    background: #0f172a;
+    background: var(--surface-strong);
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     z-index: 3000;
@@ -955,7 +1016,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     padding: 6px 14px;
     border-radius: 16px;
     background: linear-gradient(135deg, #6a5cff, #8a7cff);
-    color: #fff;
+    color: var(--btn-text);
     text-decoration: none;
     font-size: 0.85rem;
 }
@@ -997,7 +1058,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
 /* Username */
 .username-link {
   font-weight: 600;
-  color: #e6e6ff;
+    color: var(--link);
   text-decoration: none;
   display: flex;
   font-size: 13.5px;
@@ -1069,7 +1130,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
         rgba(9, 12, 29, 0.95) 0%,
         rgba(20, 10, 40, 0.95) 100%
     );
-    color: #e5e7eb;
+    color: var(--text);
     padding: 3.5rem 2rem 1.5rem;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
@@ -1091,14 +1152,14 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
 
 .footer-sub {
     margin-top: 0.3rem;
-    color: #c084fc;
+    color: var(--accent);
     font-weight: 500;
 }
 
 .footer-text {
     margin-top: 0.6rem;
     font-size: 0.95rem;
-    color: #cbd5f5;
+    color: var(--muted);
     line-height: 1.6;
 }
 
@@ -1107,7 +1168,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.8rem;
-    color: #e5e7eb;
+    color: var(--text);
 }
 
 
@@ -1122,14 +1183,14 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
 }
 
 .footer-right a {
-    color: #9ca3af;
+    color: var(--muted);
     text-decoration: none;
     font-size: 0.95rem;
     transition: color 0.25s ease, transform 0.25s ease;
 }
 
 .footer-right a:hover {
-    color: #c084fc;
+    color: var(--accent);
     transform: translateX(3px);
 }
 
@@ -1139,7 +1200,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     padding-top: 1.25rem;
     border-top: 1px solid rgba(255,255,255,0.06);
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--muted);
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
@@ -1188,10 +1249,10 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
 .creator-meta { display:flex; flex-direction:column; gap:0.2rem; font-size:13px; }
 .creator-top { display:flex; gap:0.5rem; align-items:center; }
 .creator-username { font-weight:600; margin-right:0.25rem; }
-.creator-badge { font-size:12px; padding:4px 8px; border-radius:999px; background: rgba(99,102,241,0.08); color: #e6e6ff;}
+.creator-badge { font-size:12px; padding:4px 8px; border-radius:999px; background: rgba(99,102,241,0.08); color: var(--link);}
 
 /* small bottom row */
-.creator-bottom { color: #9ca3b8; font-size:12px; display:flex; gap:0.6rem; align-items:center; }
+.creator-bottom { color: var(--muted); font-size:12px; display:flex; gap:0.6rem; align-items:center; }
 
 /* empty state */
 .creator-empty { color:#94a3b8; padding:0.5rem 0; font-size:13px; }
@@ -1207,7 +1268,7 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     background: linear-gradient(90deg, rgba(99,102,241,0.12), rgba(34,197,94,0.06));
     font-size:0.9rem;
     font-weight:600;
-    color: #fff;
+    color: var(--on-accent);
 }
 
 /* profile submeta */
@@ -1220,3 +1281,5 @@ html.light-theme .toast, body.light-theme .toast { background: #0f172a; color: #
     .creator-meta { font-size:12px; }
     .badge-chip { font-size:0.85rem; padding:0.18rem 0.5rem; }
 }
+
+

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static text_extras %}
 
 {% block title %}Home | MicroBlogHub{% endblock %}
 
@@ -87,7 +87,7 @@
           <span class="post-time">{{ post.created_at }} ago</span>
         </header>
 
-          <p class="post-body">{{ post.content|urlize|linebreaksbr }}</p>
+          <p class="post-body">{{ post.content|urlize|linkify_hashtags|linebreaksbr }}</p>
           <footer class="post-footer">
             <div class="post-actions">
               <div class="like-section">
@@ -110,6 +110,20 @@
                     {% endif %}
                   {% endif %}
               </div>
+                <div class="bookmark-section">
+                  {% if request.user.is_authenticated %}
+                    <button class="action-btn bookmark-toggle {% if post.id in bookmarked_posts %}bookmarked{% endif %}" 
+                            data-post-id="{{ post.id }}"
+                            data-bookmarked="{% if post.id in bookmarked_posts %}1{% else %}0{% endif %}"
+                            data-toggle-url="{% url 'bookmark_toggle' post.id %}">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/>
+</svg>
+
+                    </button>
+                  {% endif %}
+                </div>
               {% if request.user.is_authenticated and request.user == post.user %}
                 <div class="post-owner-actions">
                   <a href="{% url 'edit_post' post.id %}" class="action-btn" title="Edit">✏️</a>
@@ -137,8 +151,8 @@
                 <span class="yt-time">{{ comment.created_at}} ago</span>
               </div>
         
-              <div class="yt-text" id="comment-text-{{ comment.id }}">
-                {{ comment.text }}
+                <div class="yt-text" id="comment-text-{{ comment.id }}">
+                {{ comment.text|urlize|linkify_hashtags|linebreaksbr }}
               </div>
         
               <!-- Actions -->
@@ -205,9 +219,9 @@
                     {{ reply.user.username|first|upper }}
                   </div>
         
-                  <div class="yt-body">
+                    <div class="yt-body">
                     <span class="yt-username">@{{ reply.user.username }}</span>
-                    <p>{{ reply.text }}</p>
+                    <p>{{ reply.text|urlize|linkify_hashtags|linebreaksbr }}</p>
                   </div>
         
                 </div>
@@ -301,6 +315,8 @@
   
 
 {% endblock %}
+
+<!-- bookmark JS moved to static/js/bookmark_toggle.js -->
 
 
 

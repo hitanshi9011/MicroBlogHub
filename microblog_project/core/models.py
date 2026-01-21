@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
+import logging
 
 AUTH_USER = settings.AUTH_USER_MODEL
 User = get_user_model()
@@ -45,6 +46,18 @@ class Like(models.Model):
 
     def __str__(self):
         return f"{self.user.username} likes post {self.post.id}"
+
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(AUTH_USER, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='bookmarks')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = ('user', 'post')
+
+    def __str__(self):
+        return f"{self.user.username} bookmarked post {self.post.id}"
 
 
 class Comment(models.Model):
@@ -114,13 +127,27 @@ class Profile(models.Model):
         return 'Novice'
 
     def recalc_hybrid_reputation(self, ai_score=None, engagement_score=None, save=True):
-        if ai_score is not None:
-            self.ai_score = float(ai_score)
-        if engagement_score is not None:
-            self.engagement_score = float(engagement_score)
+        logger = logging.getLogger(__name__)
 
-        # weights: engagement 70% / ai 30%
-        self.reputation_score = float((self.engagement_score * 0.7) + (self.ai_score * 0.3))
+        # sanitize and normalize incoming scores to 0.0 - 1.0
+        if ai_score is not None:
+            try:
+                a = float(ai_score)
+            except Exception:
+                a = 0.0
+            self.ai_score = max(0.0, min(1.0, a))
+        if engagement_score is not None:
+            try:
+                e = float(engagement_score)
+            except Exception:
+                e = 0.0
+            self.engagement_score = max(0.0, min(1.0, e))
+
+        # incorporate action points as a small bonus (normalize action_points -> 0.0-1.0)
+        action_bonus = max(0.0, min(1.0, float(self.action_points or 0) / 100.0))
+
+        # weights: engagement 65% / ai 25% / action_bonus 10%
+        self.reputation_score = float((self.engagement_score * 0.65) + (self.ai_score * 0.25) + (action_bonus * 0.10))
         self.score = int(round(self.reputation_score * 100))
         self.level = max(1, min(10, 1 + int(self.reputation_score * 9)))
         self.badge = self._badge_from_level(self.level)
@@ -134,6 +161,21 @@ class Profile(models.Model):
                 ])
             except Exception:
                 self.save()
+            # debug/log the new values so we can confirm updates at runtime
+            logger.debug(
+                "Recalced reputation for %s: ai=%.4f, engagement=%.4f, reputation=%.4f, score=%d, level=%d",
+                self.user.username,
+                self.ai_score,
+                self.engagement_score,
+                self.reputation_score,
+                self.score,
+                self.level
+            )
+            # lightweight console output to verify at runtime
+            try:
+                print(f"[reputation] {self.user.username}: rep={self.reputation_score:.4f} score={self.score} level={self.level}")
+            except Exception:
+                pass
 
     @property
     def photo_url(self):
@@ -149,13 +191,13 @@ class Profile(models.Model):
         Keep logic in Python (no DB writes) to avoid migrations and to keep values derived.
         """
         r = float(self.reputation_score or 0)
-        if r >= 250:
+        if r >= 0.9:
             return "Legend", "🏆"
-        if r >= 100:
+        if r >= 0.75:
             return "Elite Creator", "💎"
-        if r >= 50:
+        if r >= 0.5:
             return "Rising Star", "🌟"
-        if r >= 20:
+        if r >= 0.2:
             return "Contributor", "✨"
         return "Novice", "🏅"
 

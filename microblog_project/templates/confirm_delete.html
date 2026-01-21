@@ -8,7 +8,7 @@
   <h2>Delete post</h2>
   <p>Are you sure you want to delete this post?</p>
   <div class="post-preview">
-    <p>{{ post.content|urlize|linebreaksbr }}</p>
+    <p>{{ post.content|urlize|linkify_hashtags|linebreaksbr }}</p>
   </div>
 
   <form method="POST" action="{% url 'delete_post' post.id %}">

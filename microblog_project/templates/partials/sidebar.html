@@ -19,6 +19,7 @@
       </div>
 
       <a href="{% url 'profile' request.user.username %}" class="btn-link">View Profile</a>
+      <a href="{% url 'bookmarks' %}" class="btn-link">Bookmarks</a>
     </section>
     {% else %}
     <section class="current-user-card guest">
@@ -49,21 +50,35 @@
       <h3>🏆 Top Creators</h3>
 
       {% for p in top_creators %}
-      <a class="creator-row" href="{% url 'profile' p.user.username %}" title="@{{ p.user.username }}">
-        <div class="creator-avatar">
-          <img src="{{ p.photo_url }}" alt="{{ p.user.username }}" onerror="this.src='{% static 'images/default_avatar.svg' %}'" />
-        </div>
-        <div class="creator-meta">
-          <div class="creator-top">
-            <strong class="creator-username">@{{ p.user.username }}</strong>
-            <span class="creator-badge" title="{{ p.badge_name }}">{{ p.badge_icon }} {{ p.badge_name }}</span>
+      <div class="creator-row">
+        <a class="creator-link" href="{% url 'profile' p.user.username %}" title="@{{ p.user.username }}">
+          <div class="creator-avatar">
+            <img src="{{ p.photo_url }}" alt="{{ p.user.username }}" onerror="this.src='{% static 'images/default_avatar.svg' %}'" />
           </div>
-          <div class="creator-bottom">
-            <span class="creator-level">{{ p.level_label }}</span>
-            <span class="creator-score">• {{ p.reputation_score|floatformat:1 }}</span>
+          <div class="creator-meta">
+            <div class="creator-top">
+              <strong class="creator-username">@{{ p.user.username }}</strong>
+              <span class="creator-badge" title="{{ p.badge_name }}">{{ p.badge_icon }} {{ p.badge_name }}</span>
+            </div>
+            
+            {% if request.user.is_authenticated and request.user != p.user %}
+              <div class="creator-actions">
+                {% if following_ids and p.user.id in following_ids %}
+                  <form class="ajax-follow" method="POST" action="{% url 'unfollow' p.user.id %}" data-follow-url="{% url 'follow' p.user.id %}" data-unfollow-url="{% url 'unfollow' p.user.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="follow-btn following">Following</button>
+                  </form>
+                {% else %}
+                  <form class="ajax-follow" method="POST" action="{% url 'follow' p.user.id %}" data-follow-url="{% url 'follow' p.user.id %}" data-unfollow-url="{% url 'unfollow' p.user.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="follow-btn">Follow</button>
+                  </form>
+                {% endif %}
+              </div>
+            {% endif %}
           </div>
-        </div>
-      </a>
+        </a>
+      </div>
       {% empty %}
       <div class="creator-empty">No creators yet — be the first to post quality content!</div>
       {% endfor %}
@@ -110,18 +125,26 @@
         return;
       }
 
-      // Update UI: swap Follow <-> Following where possible
+      // Update UI: swap Follow <-> Following where possible and update form action so next submit toggles
       const btn = form.querySelector('button[type="submit"]');
       if (!btn) return;
+      const followUrl = form.getAttribute('data-follow-url');
+      const unfollowUrl = form.getAttribute('data-unfollow-url');
+
       if (json.created || json.is_following) {
+        // now following
         btn.textContent = 'Following';
         btn.classList.add('following');
+        if (unfollowUrl) form.action = unfollowUrl;
       } else if (json.deleted === true) {
+        // now unfollowed
         btn.textContent = 'Follow';
         btn.classList.remove('following');
+        if (followUrl) form.action = followUrl;
       } else if (json.created === false) {
         btn.textContent = 'Following';
         btn.classList.add('following');
+        if (unfollowUrl) form.action = unfollowUrl;
       }
       // Optionally update follower counts if returned
       if (typeof json.followers_count !== 'undefined') {

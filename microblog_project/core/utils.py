@@ -25,11 +25,15 @@ def calculate_engagement_score(user):
     likes = Like.objects.filter(post__in=posts).count()
     comments = Comment.objects.filter(post__in=posts).count()
 
-    return (
+    raw_score = (
         math.log1p(followers_count) * 30 +
         math.log1p(likes) * 40 +
         math.log1p(comments) * 30
     )
+
+    # 🔑 NORMALIZE to 0.0 – 1.0
+    MAX_EXPECTED = 300  # tune later
+    return min(1.0, raw_score / MAX_EXPECTED)
 
 
 def assign_level(score):

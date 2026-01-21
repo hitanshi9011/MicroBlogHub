@@ -39,8 +39,19 @@ def notification_count(request):
 
 def top_creators(request):
     # select_related to avoid N+1 when accessing .user, limit to top 5
-    return {
+    data = {
         'top_creators': Profile.objects.select_related('user')
             .only('user__username', 'photo', 'reputation_score', 'level')
             .order_by('-reputation_score')[:5]
     }
+
+    # Provide a quick lookup of which users the current user follows so templates
+    # can render Follow/Unfollow without extra queries per-row.
+    if request.user.is_authenticated:
+        from .models import Follow
+        try:
+            data['following_ids'] = list(Follow.objects.filter(follower=request.user).values_list('following_id', flat=True))
+        except Exception:
+            data['following_ids'] = []
+
+    return data

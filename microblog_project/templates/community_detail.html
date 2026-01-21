@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static text_extras %}
 
 {% block title %}
 {{ community.name }} | MicroBlogHub
@@ -120,7 +121,7 @@
         <strong>{{ post.user.username }}</strong>
         <span class="post-time">{{ post.created_at|timesince }} ago</span>
     
-        <div class="post-body">{{ post.content }}</div>
+        <div class="post-body">{{ post.content|urlize|linkify_hashtags|linebreaksbr }}</div>
     
         <!-- ACTION BUTTONS -->
 

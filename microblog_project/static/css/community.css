@@ -10,12 +10,9 @@
     position: relative;
     padding: 1.5rem;
     border-radius: 18px;
-    background: linear-gradient(
-      180deg,
-      rgba(255,255,255,0.06),
-      rgba(255,255,255,0.02)
-    );
-    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    background-color: var(--surface);
+    border: 1px solid var(--border);
     transition: all 0.35s ease;
   }
   
@@ -34,13 +31,13 @@
   .community-title {
     font-size: 1.2rem;
     font-weight: 700;
-    color: #a78bfa;
+    color: var(--accent);
     text-decoration: none;
   }
   
   .community-desc {
     margin: 1rem 0;
-    color: #e5e7eb;
+    color: var(--text);
     line-height: 1.6;
   }
   
@@ -49,14 +46,14 @@
     justify-content: space-between;
     align-items: center;
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: var(--muted);
   }
   
   .open-btn {
     padding: 0.45rem 1rem;
     border-radius: 999px;
     background: linear-gradient(135deg, #6366f1, #22c55e);
-    color: #fff;
+    color: var(--on-accent);
     font-weight: 600;
     text-decoration: none;
   }
@@ -68,16 +65,12 @@
   }
 
   /* ===== BASE CARD ===== */
-.community-card {
+  .community-card {
     position: relative;
     padding: 1.5rem;
     border-radius: 18px;
-    background: linear-gradient(
-      180deg,
-      rgba(255,255,255,0.06),
-      rgba(255,255,255,0.02)
-    );
-    border: 1px solid rgba(255,255,255,0.12);
+    background-color: var(--surface);
+    border: 1px solid var(--border);
     transition: 
       transform 0.35s ease,
       box-shadow 0.35s ease,
@@ -87,7 +80,7 @@
   /* ===== POKÉMON HOVER GLOW ===== */
   .community-card:hover {
     transform: translateY(-10px) scale(1.02);
-    border-color: #a78bfa;
+    border-color: var(--accent);
   
     box-shadow:
       0 0 0 1px rgba(167,139,250,0.6),
